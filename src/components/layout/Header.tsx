@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store/store';
+import { setSearch } from '@/store/slices/filtersSlice';
+import pedalBharatLogo from '@/assets/pedalbharat-logo.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -16,8 +18,10 @@ import {
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const dispatch = useDispatch();
   const cartItemCount = useSelector((state: RootState) => state.cart.itemCount);
   const wishlistCount = useSelector((state: RootState) => state.wishlist.items.length);
+  const searchValue = useSelector((state: RootState) => state.filters.search);
 
   const navigation = [
     { name: 'Home', href: '/' },
@@ -35,7 +39,7 @@ const Header = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-10 text-sm">
             <div className="text-muted-foreground">
-              📞 +91 123 456 7890 | support@pedalware.com
+              📞 +91 123 456 7890 | support@pedalbharat.com
             </div>
             <div className="hidden md:flex items-center space-x-4 text-muted-foreground">
               <span>Free shipping on orders over ₹2000</span>
@@ -48,11 +52,13 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-sm">P</span>
-            </div>
-            <span className="text-xl font-bold text-foreground">PedalWare</span>
+          <Link to="/" className="flex items-center space-x-3">
+            <img 
+              src={pedalBharatLogo} 
+              alt="PedalBharat Logo" 
+              className="w-10 h-10 rounded-full"
+            />
+            <span className="text-xl font-bold text-foreground">PedalBharat</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -75,6 +81,8 @@ const Header = () => {
               <Input
                 type="text"
                 placeholder="Search cycling gear..."
+                value={searchValue}
+                onChange={(e) => dispatch(setSearch(e.target.value))}
                 className="pl-10 bg-muted/50 border-muted focus:border-primary"
               />
             </div>
@@ -151,6 +159,8 @@ const Header = () => {
                 <Input
                   type="text"
                   placeholder="Search cycling gear..."
+                  value={searchValue}
+                  onChange={(e) => dispatch(setSearch(e.target.value))}
                   className="pl-10 bg-muted/50 border-muted"
                 />
               </div>

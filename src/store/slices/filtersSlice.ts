@@ -10,7 +10,7 @@ interface FilterState {
 
 const initialState: FilterState = {
   category: 'all',
-  priceRange: [0, 1000],
+  priceRange: [0, 250000],
   brands: [],
   sortBy: 'newest',
   search: '',

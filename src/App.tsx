@@ -16,6 +16,17 @@ import Brands from "./pages/Brands";
 import Blog from "./pages/Blog";
 import Contact from "./pages/Contact";
 import Account from "./pages/Account";
+import About from "./pages/About";
+import Careers from "./pages/Careers";
+import Help from "./pages/Help";
+import Returns from "./pages/Returns";
+import Shipping from "./pages/Shipping";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import Refund from "./pages/Refund";
+import Cookies from "./pages/Cookies";
+import Press from "./pages/Press";
+import News from "./pages/News";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,7 +50,17 @@ const App = () => (
               <Route path="/blog" element={<Blog />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/account" element={<Account />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="/about" element={<About />} />
+              <Route path="/careers" element={<Careers />} />
+              <Route path="/help" element={<Help />} />
+              <Route path="/returns" element={<Returns />} />
+              <Route path="/shipping" element={<Shipping />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/refund" element={<Refund />} />
+              <Route path="/cookies" element={<Cookies />} />
+              <Route path="/press" element={<Press />} />
+              <Route path="/news" element={<News />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>

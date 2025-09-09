@@ -20,12 +20,15 @@ import {
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
-  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
-  const cartItems = useSelector((state: RootState) => state.cart.items);
-  const wishlistCount = useSelector((state: RootState) => state.wishlist.items.length);
+  const auth = useSelector((state: RootState) => state.auth);
+  const cartItems = useSelector((state: RootState) => state.cart.items || []);
+  const wishlistItems = useSelector((state: RootState) => state.wishlist.items || []);
   const searchValue = useSelector((state: RootState) => state.filters.search);
   
-  const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+  const isAuthenticated = auth?.isAuthenticated || false;
+  const user = auth?.user;
+  const cartItemCount = cartItems.reduce((total, item) => total + (item.quantity || 0), 0);
+  const wishlistCount = wishlistItems.length;
 
   const navigation = [
     { name: 'Home', href: '/' },

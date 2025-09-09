@@ -11,7 +11,8 @@ interface AppInitializerProps {
 
 const AppInitializer = ({ children }: AppInitializerProps) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const auth = useSelector((state: RootState) => state.auth);
+  const isAuthenticated = auth?.isAuthenticated || false;
 
   useEffect(() => {
     // Initialize the app

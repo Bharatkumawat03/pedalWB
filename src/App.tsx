@@ -27,6 +27,9 @@ import Refund from "./pages/Refund";
 import Cookies from "./pages/Cookies";
 import Press from "./pages/Press";
 import News from "./pages/News";
+import BlogDetail from "./pages/BlogDetail";
+import PressDetail from "./pages/PressDetail";
+import NewsDetail from "./pages/NewsDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +51,7 @@ const App = () => (
               <Route path="/categories" element={<Categories />} />
               <Route path="/brands" element={<Brands />} />
               <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:id" element={<BlogDetail />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/account" element={<Account />} />
               <Route path="/about" element={<About />} />
@@ -60,7 +64,9 @@ const App = () => (
               <Route path="/refund" element={<Refund />} />
               <Route path="/cookies" element={<Cookies />} />
               <Route path="/press" element={<Press />} />
+              <Route path="/press/:id" element={<PressDetail />} />
               <Route path="/news" element={<News />} />
+              <Route path="/news/:id" element={<NewsDetail />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>

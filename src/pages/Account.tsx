@@ -97,7 +97,7 @@ const Account = () => {
 
   return (
     <div className="min-h-screen bg-background py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">My Account</h1>
@@ -196,7 +196,7 @@ const Account = () => {
                               <span className="text-sm text-muted-foreground">
                                 Tracking ID: {order.trackingId}
                               </span>
-                              <Button variant="outline" size="sm">
+                              <Button variant="outline" size="sm" onClick={() => window.open(`https://parcelsapp.com/en/tracking/${order.trackingId}`, '_blank') }>
                                 Track Order
                               </Button>
                             </div>

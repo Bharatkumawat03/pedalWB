@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Clock, Users, Briefcase } from 'lucide-react';
@@ -50,7 +51,7 @@ const Careers = () => {
 
   return (
     <div className="min-h-screen bg-background py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="text-center mb-16">
           <Badge variant="outline" className="mb-4">Join Our Team</Badge>
@@ -106,7 +107,9 @@ const Careers = () => {
                         <Badge variant="outline">{position.type}</Badge>
                       </div>
                     </div>
-                    <Button className="mt-4 md:mt-0">Apply Now</Button>
+                    <Button asChild className="mt-4 md:mt-0">
+                      <Link to={`/contact?subject=${encodeURIComponent('Application for ' + position.title)}`}>Apply Now</Link>
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -134,8 +137,8 @@ const Careers = () => {
             We're always looking for talented individuals. Send us your resume and tell us how 
             you'd like to contribute to PedalBharat's mission.
           </p>
-          <Button size="lg" className="bg-primary hover:bg-primary/90">
-            Send Us Your Resume
+          <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
+            <a href="mailto:careers@pedalbharat.com?subject=Resume%20-%20Open%20Application">Send Us Your Resume</a>
           </Button>
         </div>
       </div>

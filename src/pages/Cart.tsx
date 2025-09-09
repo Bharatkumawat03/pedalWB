@@ -27,7 +27,7 @@ const Cart = () => {
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-background py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <ShoppingBag className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
             <h1 className="text-3xl font-bold text-foreground mb-4">Your Cart is Empty</h1>
@@ -47,7 +47,7 @@ const Cart = () => {
 
   return (
     <div className="min-h-screen bg-background py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <Link to="/shop" className="inline-flex items-center text-muted-foreground hover:text-primary mb-4">

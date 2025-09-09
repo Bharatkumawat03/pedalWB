@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -81,12 +82,14 @@ const News = () => {
     return matchesCategory && matchesSearch;
   });
 
+  const getId = (article: typeof newsArticles[number]) => newsArticles.findIndex(a => a.title === article.title) + 1;
   const featuredArticle = newsArticles.find(article => article.featured);
+  const featuredId = featuredArticle ? getId(featuredArticle) : null;
   const regularArticles = filteredArticles.filter(article => !article.featured);
 
   return (
     <div className="min-h-screen bg-background py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="text-center mb-12">
           <Badge variant="outline" className="mb-4">Latest News</Badge>
@@ -162,9 +165,11 @@ const News = () => {
                       <User className="w-4 h-4" />
                       <span>{featuredArticle.author}</span>
                     </div>
-                    <Button>
-                      Read More
-                      <ArrowRight className="w-4 h-4 ml-2" />
+                    <Button asChild>
+                      <Link to={featuredId ? `/news/${featuredId}` : '/news'}>
+                        Read More
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Link>
                     </Button>
                   </div>
                 </div>

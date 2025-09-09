@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,7 +70,7 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-background py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-foreground mb-4">
@@ -216,8 +217,8 @@ const Contact = () => {
                 <p className="text-sm opacity-90 mb-4">
                   Check our FAQ section for instant answers to common questions.
                 </p>
-                <Button variant="secondary" className="bg-background text-foreground hover:bg-background/90">
-                  View FAQ
+                <Button asChild variant="secondary" className="bg-background text-foreground hover:bg-background/90">
+                  <Link to="/help">View FAQ</Link>
                 </Button>
               </CardContent>
             </Card>

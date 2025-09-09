@@ -5,7 +5,7 @@ channel = "stable-25_05"
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["npm", "run", "start"]
+run = ["npm", "start"]
 build = ["npm", "run", "build"]
 
 [workflows]
@@ -29,17 +29,21 @@ task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[ports]]
 localPort = 3000
 externalPort = 3000
 
 [[ports]]
-localPort = 5000
-externalPort = 5000
+localPort = 3001
+externalPort = 3001
 
 [[ports]]
-localPort = 8080
+localPort = 5000
 externalPort = 80
 
 [agent]
 integrations = ["javascript_database==1.0.0"]
+expertMode = true

@@ -1,6 +1,28 @@
-const mongoose = require('mongoose');
+import mongoose, { Document, Schema } from 'mongoose';
 
-const categorySchema = new mongoose.Schema({
+export interface ICategory extends Document {
+  name: string;
+  slug: string;
+  description?: string;
+  icon: string;
+  image?: {
+    url?: string;
+    publicId?: string;
+    altText?: string;
+  };
+  parent?: mongoose.Types.ObjectId;
+  status: 'active' | 'inactive';
+  sortOrder: number;
+  seo?: {
+    metaTitle?: string;
+    metaDescription?: string;
+    keywords?: string[];
+  };
+  children: mongoose.Types.ObjectId[];
+  productCount: number;
+}
+
+const categorySchema = new Schema<ICategory>({
   name: {
     type: String,
     required: [true, 'Category name is required'],
@@ -27,7 +49,7 @@ const categorySchema = new mongoose.Schema({
     altText: String
   },
   parent: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'Category'
   },
   status: {
@@ -54,22 +76,9 @@ const categorySchema = new mongoose.Schema({
 categorySchema.index({ slug: 1 });
 categorySchema.index({ parent: 1 });
 categorySchema.index({ status: 1 });
-categorySchema.index({ sortOrder: 1 });
 
-// Generate slug before saving
-categorySchema.pre('save', function(next) {
-  if (this.isModified('name')) {
-    this.slug = this.name
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/[\s_-]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  }
-  next();
-});
-
-// Virtual for subcategories
-categorySchema.virtual('subcategories', {
+// Virtual for children categories
+categorySchema.virtual('children', {
   ref: 'Category',
   localField: '_id',
   foreignField: 'parent'
@@ -78,9 +87,17 @@ categorySchema.virtual('subcategories', {
 // Virtual for product count
 categorySchema.virtual('productCount', {
   ref: 'Product',
-  localField: 'slug',
+  localField: '_id',
   foreignField: 'category',
   count: true
 });
 
-module.exports = mongoose.model('Category', categorySchema);
+// Pre-save middleware to generate slug
+categorySchema.pre('save', function(this: ICategory, next) {
+  if (this.isModified('name')) {
+    this.slug = this.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').trim('-');
+  }
+  next();
+});
+
+export default mongoose.model<ICategory>('Category', categorySchema);

@@ -1,23 +1,25 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const compression = require('compression');
-const rateLimit = require('express-rate-limit');
-const path = require('path');
-require('dotenv').config();
+import express, { Request, Response } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import compression from 'compression';
+import rateLimit from 'express-rate-limit';
+import path from 'path';
+import dotenv from 'dotenv';
 
-const connectDB = require('./config/database');
-const errorHandler = require('./middleware/errorHandler');
+import connectDB from './config/database';
+import errorHandler from './middleware/errorHandler';
 
 // Import routes
-const authRoutes = require('./routes/auth');
-const productRoutes = require('./routes/products');
-const userRoutes = require('./routes/users');
-const cartRoutes = require('./routes/cart');
-const wishlistRoutes = require('./routes/wishlist');
-const orderRoutes = require('./routes/orders');
-const categoryRoutes = require('./routes/categories');
+import authRoutes from './routes/auth';
+import productRoutes from './routes/products';
+import userRoutes from './routes/users';
+import cartRoutes from './routes/cart';
+import wishlistRoutes from './routes/wishlist';
+import orderRoutes from './routes/orders';
+import categoryRoutes from './routes/categories';
+
+dotenv.config();
 
 const app = express();
 
@@ -58,7 +60,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/categories', categoryRoutes);
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (req: Request, res: Response) => {
   res.status(200).json({ 
     status: 'OK', 
     message: 'Cycle Hub Express API is running',
@@ -70,13 +72,15 @@ app.get('/api/health', (req, res) => {
 app.use(errorHandler);
 
 // Handle 404
-app.use((req, res) => {
+app.use((req: Request, res: Response) => {
   res.status(404).json({ message: 'API endpoint not found' });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
 });
+
+export default app;

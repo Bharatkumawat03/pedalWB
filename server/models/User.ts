@@ -1,7 +1,90 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import mongoose, { Document, Schema } from 'mongoose';
+import bcrypt from 'bcryptjs';
 
-const addressSchema = new mongoose.Schema({
+export interface IAddress {
+  type: 'home' | 'office' | 'other';
+  firstName: string;
+  lastName: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  phone?: string;
+  isDefault: boolean;
+}
+
+export interface ICartItem {
+  _id?: mongoose.Types.ObjectId;
+  product: mongoose.Types.ObjectId;
+  quantity: number;
+  selectedColor?: string;
+  selectedSize?: string;
+  addedAt: Date;
+}
+
+export interface IWishlistItem {
+  product: mongoose.Types.ObjectId;
+  addedAt: Date;
+}
+
+export interface IUserPreferences {
+  newsletter: boolean;
+  smsNotifications: boolean;
+  emailNotifications: boolean;
+  language: string;
+  currency: string;
+}
+
+export interface ISocialAuth {
+  googleId?: string;
+  facebookId?: string;
+  twitterId?: string;
+}
+
+export interface IUser extends Document {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  phone?: string;
+  dateOfBirth?: Date;
+  gender?: 'male' | 'female' | 'other' | 'prefer-not-to-say';
+  avatar?: {
+    url?: string;
+    publicId?: string;
+  };
+  addresses: IAddress[];
+  preferences: IUserPreferences;
+  role: 'user' | 'admin' | 'moderator';
+  status: 'active' | 'inactive' | 'suspended';
+  emailVerified: boolean;
+  emailVerificationToken?: string;
+  emailVerificationExpires?: Date;
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
+  loginAttempts: number;
+  lockUntil?: Date;
+  lastLogin?: Date;
+  socialAuth?: ISocialAuth;
+  cart: ICartItem[];
+  wishlist: IWishlistItem[];
+  orderHistory: mongoose.Types.ObjectId[];
+  loyaltyPoints: number;
+  totalSpent: number;
+  fullName: string;
+  isLocked: boolean;
+  comparePassword(candidatePassword: string): Promise<boolean>;
+  incLoginAttempts(): Promise<IUser>;
+  resetLoginAttempts(): Promise<IUser>;
+  addToCart(productId: string, quantity?: number, selectedColor?: string, selectedSize?: string): Promise<IUser>;
+  removeFromCart(cartItemId: string): Promise<IUser>;
+  addToWishlist(productId: string): Promise<IUser>;
+  removeFromWishlist(productId: string): Promise<IUser>;
+}
+
+const addressSchema = new Schema<IAddress>({
   type: {
     type: String,
     enum: ['home', 'office', 'other'],
@@ -56,7 +139,7 @@ const addressSchema = new mongoose.Schema({
   }
 });
 
-const userSchema = new mongoose.Schema({
+const userSchema = new Schema<IUser>({
   firstName: {
     type: String,
     required: [true, 'First name is required'],
@@ -151,7 +234,7 @@ const userSchema = new mongoose.Schema({
   },
   cart: [{
     product: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'Product',
       required: true
     },
@@ -169,7 +252,7 @@ const userSchema = new mongoose.Schema({
   }],
   wishlist: [{
     product: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'Product',
       required: true
     },
@@ -179,7 +262,7 @@ const userSchema = new mongoose.Schema({
     }
   }],
   orderHistory: [{
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'Order'
   }],
   loyaltyPoints: {
@@ -194,7 +277,7 @@ const userSchema = new mongoose.Schema({
   timestamps: true,
   toJSON: { 
     virtuals: true,
-    transform: function(doc, ret) {
+    transform: function(doc: any, ret: any) {
       delete ret.password;
       delete ret.passwordResetToken;
       delete ret.passwordResetExpires;
@@ -212,57 +295,68 @@ userSchema.index({ role: 1 });
 userSchema.index({ status: 1 });
 
 // Virtual for full name
-userSchema.virtual('fullName').get(function() {
+userSchema.virtual('fullName').get(function(this: IUser) {
   return `${this.firstName} ${this.lastName}`;
 });
 
 // Virtual for account locked
-userSchema.virtual('isLocked').get(function() {
-  return !!(this.lockUntil && this.lockUntil > Date.now());
+userSchema.virtual('isLocked').get(function(this: IUser) {
+  return !!(this.lockUntil && this.lockUntil > new Date());
 });
 
 // Pre-save middleware to hash password
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function(this: IUser, next) {
   if (!this.isModified('password')) return next();
   
-  this.password = await bcrypt.hash(this.password, 12);
-  next();
+  try {
+    const salt = await bcrypt.genSalt(12);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error: any) {
+    next(error);
+  }
 });
 
-// Instance method to compare password
-userSchema.methods.comparePassword = async function(candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
+// Compare password method
+userSchema.methods.comparePassword = async function(this: IUser, candidatePassword: string): Promise<boolean> {
+  try {
+    return await bcrypt.compare(candidatePassword, this.password);
+  } catch (error) {
+    throw error;
+  }
 };
 
-// Instance method to increment login attempts
-userSchema.methods.incLoginAttempts = function() {
+// Increment login attempts
+userSchema.methods.incLoginAttempts = function(this: IUser): Promise<IUser> {
   // If we have a previous lock that has expired, restart at 1
-  if (this.lockUntil && this.lockUntil < Date.now()) {
+  if (this.lockUntil && this.lockUntil < new Date()) {
     return this.updateOne({
-      $set: { loginAttempts: 1 },
-      $unset: { lockUntil: 1 }
-    });
+      $unset: { lockUntil: 1 },
+      $set: { loginAttempts: 1 }
+    }).exec();
   }
   
-  const updates = { $inc: { loginAttempts: 1 } };
+  const updates: any = { $inc: { loginAttempts: 1 } };
   
-  // Lock account after 5 failed attempts for 2 hours
+  // Lock account after 5 attempts for 2 hours
   if (this.loginAttempts + 1 >= 5 && !this.isLocked) {
-    updates.$set = { lockUntil: Date.now() + 2 * 60 * 60 * 1000 }; // 2 hours
+    updates.$set = {
+      lockUntil: Date.now() + 2 * 60 * 60 * 1000 // 2 hours
+    };
   }
   
-  return this.updateOne(updates);
+  return this.updateOne(updates).exec();
 };
 
-// Instance method to reset login attempts
-userSchema.methods.resetLoginAttempts = function() {
+// Reset login attempts
+userSchema.methods.resetLoginAttempts = function(this: IUser): Promise<IUser> {
   return this.updateOne({
     $unset: { loginAttempts: 1, lockUntil: 1 }
-  });
+  }).exec();
 };
 
-// Method to add item to cart
-userSchema.methods.addToCart = function(productId, quantity = 1, selectedColor, selectedSize) {
+// Add item to cart
+userSchema.methods.addToCart = function(this: IUser, productId: string, quantity = 1, selectedColor?: string, selectedSize?: string): Promise<IUser> {
   const existingItem = this.cart.find(item => 
     item.product.toString() === productId.toString() &&
     item.selectedColor === selectedColor &&
@@ -273,41 +367,45 @@ userSchema.methods.addToCart = function(productId, quantity = 1, selectedColor, 
     existingItem.quantity += quantity;
   } else {
     this.cart.push({
-      product: productId,
+      product: new mongoose.Types.ObjectId(productId),
       quantity,
       selectedColor,
-      selectedSize
+      selectedSize,
+      addedAt: new Date()
     });
   }
 
   return this.save();
 };
 
-// Method to remove item from cart
-userSchema.methods.removeFromCart = function(cartItemId) {
-  this.cart.id(cartItemId).remove();
+// Remove item from cart
+userSchema.methods.removeFromCart = function(this: IUser, cartItemId: string): Promise<IUser> {
+  this.cart = this.cart.filter(item => item._id?.toString() !== cartItemId);
   return this.save();
 };
 
-// Method to add item to wishlist
-userSchema.methods.addToWishlist = function(productId) {
+// Add item to wishlist
+userSchema.methods.addToWishlist = function(this: IUser, productId: string): Promise<IUser> {
   const exists = this.wishlist.find(item => 
     item.product.toString() === productId.toString()
   );
 
   if (!exists) {
-    this.wishlist.push({ product: productId });
+    this.wishlist.push({ 
+      product: new mongoose.Types.ObjectId(productId),
+      addedAt: new Date()
+    });
     return this.save();
   }
   return Promise.resolve(this);
 };
 
-// Method to remove item from wishlist
-userSchema.methods.removeFromWishlist = function(productId) {
+// Remove item from wishlist
+userSchema.methods.removeFromWishlist = function(this: IUser, productId: string): Promise<IUser> {
   this.wishlist = this.wishlist.filter(item => 
     item.product.toString() !== productId.toString()
   );
   return this.save();
 };
 
-module.exports = mongoose.model('User', userSchema);
+export default mongoose.model<IUser>('User', userSchema);

@@ -25,13 +25,26 @@ The application implements Redux Toolkit for centralized state management across
 - **Wishlist Management**: Manages user's saved products and favorites
 - **Filters Management**: Controls product filtering, searching, sorting, and category selection
 
+### Backend Architecture
+The application features a fully TypeScript-converted Express.js backend with MongoDB integration:
+
+- **Runtime**: Node.js with TypeScript compilation via ts-node for development
+- **Framework**: Express.js with comprehensive middleware stack
+- **Database**: MongoDB with Mongoose ODM for data modeling and validation
+- **Authentication**: JWT-based authentication with bcrypt password hashing
+- **API Design**: RESTful endpoints with structured JSON responses
+- **Validation**: Joi schema validation for request data
+- **Error Handling**: Centralized error handling middleware with detailed error responses
+- **Development**: Hot reloading with nodemon for seamless development experience
+
 ### Data Layer
-Product data is currently managed through static TypeScript files with comprehensive product interfaces including:
-- Product specifications and features
-- Category and brand relationships
-- Pricing and inventory status
-- Rating and review systems
-- Image and media management
+The backend implements comprehensive MongoDB models with TypeScript interfaces:
+- **User Management**: Complete user profiles, authentication, and authorization
+- **Product Catalog**: Detailed product models with specifications, inventory, and pricing
+- **Order Processing**: Full order lifecycle with payment and shipping tracking
+- **Review System**: Product reviews and ratings with moderation
+- **Category Management**: Hierarchical product categorization
+- **Shopping Cart**: Persistent cart management with user sessions
 
 ### UI/UX Design System
 The platform implements a cohesive dark theme design system with:

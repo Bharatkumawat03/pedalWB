@@ -95,7 +95,7 @@ categorySchema.virtual('productCount', {
 // Pre-save middleware to generate slug
 categorySchema.pre('save', function(this: ICategory, next) {
   if (this.isModified('name')) {
-    this.slug = this.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').trim('-');
+    this.slug = this.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
   }
   next();
 });

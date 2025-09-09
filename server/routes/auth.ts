@@ -1,18 +1,30 @@
 import express from 'express';
+import {
+  register,
+  login,
+  getMe,
+  logout,
+  updateDetails,
+  updatePassword,
+  forgotPassword,
+  resetPassword
+} from '../controllers/authController';
+import { protect } from '../middleware/auth';
 
 const router = express.Router();
 
-// Temporary placeholder routes for TypeScript conversion
-router.get('/me', (req, res) => {
-  res.json({ success: true, message: 'Auth route working - conversion in progress' });
-});
+// Public routes
+router.post('/register', register);
+router.post('/login', login);
+router.post('/logout', logout);
+router.post('/forgot-password', forgotPassword);
+router.put('/reset-password/:resettoken', resetPassword);
 
-router.post('/login', (req, res) => {
-  res.json({ success: true, message: 'Login route working - conversion in progress' });
-});
+// Protected routes
+router.use(protect); // All routes after this middleware are protected
 
-router.post('/register', (req, res) => {
-  res.json({ success: true, message: 'Register route working - conversion in progress' });
-});
+router.get('/me', getMe);
+router.put('/profile', updateDetails);
+router.put('/password', updatePassword);
 
 export default router;

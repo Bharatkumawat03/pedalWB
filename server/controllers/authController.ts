@@ -102,10 +102,10 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
     }
 
     // Check if password matches
-    const isMatch = await (user as any).matchPassword(password);
+    const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       // Increment failed login attempts
-      await (user as any).incLoginAttempts();
+      await user.incLoginAttempts();
       res.status(401).json({
         success: false,
         message: 'Invalid credentials'
@@ -114,7 +114,7 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
     }
 
     // Reset failed login attempts on successful login
-    await (user as any).resetLoginAttempts();
+    await user.resetLoginAttempts();
 
     sendTokenResponse(user, 200, res, 'Login successful');
   } catch (error) {
@@ -203,7 +203,7 @@ export const updatePassword = async (req: AuthenticatedRequest, res: Response, n
     }
 
     // Check current password
-    if (!(await (user as any).matchPassword(req.body.currentPassword))) {
+    if (!(await user.comparePassword(req.body.currentPassword))) {
       res.status(401).json({
         success: false,
         message: 'Current password is incorrect'

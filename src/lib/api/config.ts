@@ -29,6 +29,7 @@ api.interceptors.request.use(
 // Response interceptor for error handling
 api.interceptors.response.use(
   (response) => {
+    // Return the data portion of the response for the service methods
     return response.data;
   },
   (error) => {

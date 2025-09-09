@@ -274,10 +274,83 @@ export const getCategoriesWithCounts = async (req: Request, res: Response, next:
   }
 };
 
+// @desc    Get products for a category
+// @route   GET /api/categories/:slug/products
+// @access  Public
+export const getCategoryProducts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 12;
+    const skip = (page - 1) * limit;
+
+    // Build query object
+    const query: any = { category: req.params.slug, status: 'active' };
+
+    // Apply additional filters from query params
+    if (req.query.brand && req.query.brand !== 'all') {
+      query.brand = req.query.brand;
+    }
+
+    if (req.query.minPrice || req.query.maxPrice) {
+      query.price = {};
+      if (req.query.minPrice) {
+        query.price.$gte = parseFloat(req.query.minPrice as string);
+      }
+      if (req.query.maxPrice) {
+        query.price.$lte = parseFloat(req.query.maxPrice as string);
+      }
+    }
+
+    // Sort options
+    let sortBy: any = { createdAt: -1 };
+    if (req.query.sortBy) {
+      switch (req.query.sortBy) {
+        case 'price-asc':
+          sortBy = { price: 1 };
+          break;
+        case 'price-desc':
+          sortBy = { price: -1 };
+          break;
+        case 'name-asc':
+          sortBy = { name: 1 };
+          break;
+        case 'rating':
+          sortBy = { 'rating.average': -1 };
+          break;
+        case 'newest':
+          sortBy = { createdAt: -1 };
+          break;
+      }
+    }
+
+    const products = await Product.find(query)
+      .skip(skip)
+      .limit(limit)
+      .sort(sortBy);
+
+    const total = await Product.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      total,
+      pagination: {
+        page,
+        limit,
+        pages: Math.ceil(total / limit)
+      },
+      data: products
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getCategories,
   getCategory,
   getCategoryBySlug,
+  getCategoryProducts,
   createCategory,
   updateCategory,
   deleteCategory,

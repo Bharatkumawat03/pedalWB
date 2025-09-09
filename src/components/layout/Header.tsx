@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '@/store/store';
+import { RootState, AppDispatch } from '@/store/store';
 import { setSearch } from '@/store/slices/filtersSlice';
+import { logoutUser } from '@/store/slices/authSlice';
 import pedalBharatLogo from '@/assets/pedalbharat-logo.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,10 +19,13 @@ import {
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const dispatch = useDispatch();
-  const cartItemCount = useSelector((state: RootState) => state.cart.itemCount);
+  const dispatch = useDispatch<AppDispatch>();
+  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+  const cartItems = useSelector((state: RootState) => state.cart.items);
   const wishlistCount = useSelector((state: RootState) => state.wishlist.items.length);
   const searchValue = useSelector((state: RootState) => state.filters.search);
+  
+  const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
   const navigation = [
     { name: 'Home', href: '/' },

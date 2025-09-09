@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '@/store/store';
+import { RootState, AppDispatch } from '@/store/store';
 import { addToCart } from '@/store/slices/cartSlice';
 import { toggleWishlist } from '@/store/slices/wishlistSlice';
-import { Product } from '@/data/products';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,38 +10,32 @@ import { Heart, ShoppingCart, Star, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface ProductCardProps {
-  product: Product;
+  product: any; // Backend product structure
   className?: string;
 }
 
 const ProductCard = ({ product, className = '' }: ProductCardProps) => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const [isHovered, setIsHovered] = useState(false);
   
   const isInWishlist = useSelector((state: RootState) =>
-    state.wishlist.items.some(item => item.id === product.id)
+    state.wishlist.items.some(item => item.product?._id === (product._id || product.id))
   );
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    dispatch(addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      category: product.category,
-    }));
+    const productId = product._id || product.id;
+    if (productId) {
+      dispatch(addToCart({ productId, quantity: 1 }));
+    }
   };
 
   const handleToggleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
-    dispatch(toggleWishlist({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      category: product.category,
-    }));
+    const productId = product._id || product.id;
+    if (productId) {
+      dispatch(toggleWishlist(productId));
+    }
   };
 
   const discountPercentage = product.originalPrice 
@@ -73,7 +66,7 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
           {discountPercentage > 0 && (
             <Badge variant="destructive">-{discountPercentage}%</Badge>
           )}
-          {!product.inStock && (
+          {!product.inStock && product.stock <= 0 && (
             <Badge variant="secondary">Out of Stock</Badge>
           )}
         </div>
@@ -90,7 +83,7 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
               className={`w-4 h-4 ${isInWishlist ? 'fill-primary text-primary' : 'text-muted-foreground'}`} 
             />
           </Button>
-          <Link to={`/product/${product.id}`}>
+          <Link to={`/product/${product._id || product.id}`}>
             <Button
               size="icon"
               variant="ghost"
@@ -105,7 +98,7 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
         <div className={`absolute bottom-3 left-3 right-3 transition-all duration-300 ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
           <Button
             onClick={handleAddToCart}
-            disabled={!product.inStock}
+            disabled={!product.inStock && product.stock <= 0}
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
             size="sm"
           >
@@ -116,7 +109,7 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
       </div>
 
       <CardContent className="p-4">
-        <Link to={`/product/${product.id}`} className="block group">
+        <Link to={`/product/${product._id || product.id}`} className="block group">
           {/* Brand */}
           <p className="text-sm text-muted-foreground mb-1">{product.brand}</p>
           
@@ -140,7 +133,7 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
               ))}
             </div>
             <span className="text-sm text-muted-foreground">
-              {product.rating} ({product.reviews})
+              {product.rating || product.averageRating || 0} ({product.reviews || product.reviewCount || 0})
             </span>
           </div>
 

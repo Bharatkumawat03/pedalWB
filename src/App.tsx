@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/layout/Layout";
+import AppInitializer from "./components/AppInitializer";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
@@ -38,7 +39,8 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Layout>
+          <AppInitializer>
+            <Layout>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/shop" element={<Shop />} />
@@ -63,7 +65,8 @@ const App = () => (
               <Route path="/news" element={<News />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </Layout>
+            </Layout>
+          </AppInitializer>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

@@ -41,7 +41,10 @@ app.use('/api/', limiter);
 app.use(compression());
 app.use(morgan('combined'));
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5000',
+  origin: [
+    process.env.FRONTEND_URL || 'http://localhost:5000',
+    /.*\.replit\.dev$/
+  ],
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -76,7 +79,7 @@ app.use((req: Request, res: Response) => {
   res.status(404).json({ message: 'API endpoint not found' });
 });
 
-const PORT = parseInt(process.env.PORT || '3000', 10);
+const PORT = parseInt(process.env.PORT || '3001', 10);
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);

@@ -4,8 +4,8 @@ modules = ["nodejs-20", "web"]
 channel = "stable-25_05"
 
 [deployment]
-deploymentTarget = "autoscale"
-run = ["npm", "start"]
+deploymentTarget = "vm"
+run = ["bash", "-c", "concurrently \"vite preview --host 0.0.0.0 --port 5000\" \"cd server && npm start\""]
 build = ["npm", "run", "build"]
 
 [workflows]

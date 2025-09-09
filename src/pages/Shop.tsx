@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store/store';
 import { setCategory, setPriceRange, toggleBrand, setSortBy, setSearch } from '@/store/slices/filtersSlice';
-import { products, categories, brands } from '@/data/products';
+import productService from '@/services/productService';
+import categoryService from '@/services/categoryService';
 import ProductCard from '@/components/product/ProductCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -18,48 +19,93 @@ const Shop = () => {
   const filters = useSelector((state: RootState) => state.filters);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
+  const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [brands, setBrands] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({ page: 1, total: 0, totalProducts: 0 });
 
-  // Filter and sort products
-  const filteredProducts = products
-    .filter(product => {
-      // Category filter
-      if (filters.category !== 'all' && product.category !== filters.category) {
-        return false;
+  // Fetch initial data
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        setLoading(true);
+        const [categoriesData, productsData] = await Promise.all([
+          categoryService.getCategories(),
+          productService.getProducts({ page: 1, limit: 24 })
+        ]);
+        
+        setCategories([{ _id: 'all', name: 'All Categories', slug: 'all' }, ...categoriesData]);
+        setProducts(productsData.data || []);
+        setPagination({
+          page: productsData.pagination?.current || 1,
+          total: productsData.pagination?.total || 0,
+          totalProducts: productsData.pagination?.totalProducts || 0
+        });
+        
+        // Extract unique brands from products
+        const uniqueBrands = [...new Set((productsData.data || []).map((p: any) => p.brand))];
+        setBrands(uniqueBrands.sort());
+      } catch (err: any) {
+        console.error('Error fetching data:', err);
+        setError(err.message);
+        // Set fallback data
+        setCategories([{ _id: 'all', name: 'All Categories', slug: 'all' }]);
+        setProducts([]);
+        setBrands([]);
+      } finally {
+        setLoading(false);
       }
+    };
+
+    fetchInitialData();
+  }, []);
+
+  // Fetch products when filters change
+  useEffect(() => {
+    const fetchFilteredProducts = async () => {
+      if (loading) return; // Skip if initial load is still happening
       
-      // Price filter
-      if (product.price < filters.priceRange[0] || product.price > filters.priceRange[1]) {
-        return false;
+      try {
+        const filterParams: any = {
+          page: 1,
+          limit: 24,
+          sortBy: filters.sortBy,
+        };
+        
+        if (filters.category !== 'all') {
+          filterParams.category = filters.category;
+        }
+        if (filters.search) {
+          filterParams.search = filters.search;
+        }
+        if (filters.brands.length > 0) {
+          filterParams.brand = filters.brands;
+        }
+        if (filters.priceRange[0] > 0) {
+          filterParams.priceMin = filters.priceRange[0];
+        }
+        if (filters.priceRange[1] < 1000) {
+          filterParams.priceMax = filters.priceRange[1];
+        }
+        
+        const productsData = await productService.getProducts(filterParams);
+        setProducts(productsData.data || []);
+        setPagination({
+          page: productsData.pagination?.current || 1,
+          total: productsData.pagination?.total || 0,
+          totalProducts: productsData.pagination?.totalProducts || 0
+        });
+      } catch (err: any) {
+        console.error('Error fetching filtered products:', err);
       }
-      
-      // Brand filter
-      if (filters.brands.length > 0 && !filters.brands.includes(product.brand)) {
-        return false;
-      }
-      
-      // Search filter
-      if (filters.search && !product.name.toLowerCase().includes(filters.search.toLowerCase())) {
-        return false;
-      }
-      
-      return true;
-    })
-    .sort((a, b) => {
-      switch (filters.sortBy) {
-        case 'name':
-          return a.name.localeCompare(b.name);
-        case 'price-low':
-          return a.price - b.price;
-        case 'price-high':
-          return b.price - a.price;
-        case 'rating':
-          return b.rating - a.rating;
-        case 'newest':
-          return b.isNew ? 1 : -1;
-        default:
-          return 0;
-      }
-    });
+    };
+
+    fetchFilteredProducts();
+  }, [filters, loading]);
+
+  // Products are already filtered by the backend based on filters
 
   return (
     <div className="min-h-screen bg-background py-8">
@@ -135,12 +181,16 @@ const Shop = () => {
           {/* Results Count */}
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground">
-              Showing {filteredProducts.length} of {products.length} products
+              {loading ? (
+                "Loading products..."
+              ) : (
+                `Showing ${products.length} of ${pagination.totalProducts} products`
+              )}
             </p>
             <div className="flex items-center gap-2">
               {filters.category !== 'all' && (
                 <Badge variant="secondary" className="gap-2">
-                  {categories.find(c => c.id === filters.category)?.name}
+                  {categories.find(c => c._id === filters.category || c.slug === filters.category)?.name}
                   <button
                     onClick={() => dispatch(setCategory('all'))}
                     className="text-muted-foreground hover:text-foreground"
@@ -183,12 +233,12 @@ const Shop = () => {
                 >
                   All Categories
                 </button>
-                {categories.map(category => (
+                {categories.slice(1).map(category => (
                   <button
-                    key={category.id}
-                    onClick={() => dispatch(setCategory(category.id))}
+                    key={category._id}
+                    onClick={() => dispatch(setCategory(category.slug || category._id))}
                     className={`block w-full text-left px-3 py-2 rounded-md transition-colors ${
-                      filters.category === category.id
+                      filters.category === (category.slug || category._id)
                         ? 'bg-primary text-primary-foreground'
                         : 'hover:bg-muted'
                     }`}
@@ -247,7 +297,30 @@ const Shop = () => {
 
           {/* Products Grid */}
           <main className="flex-1">
-            {filteredProducts.length === 0 ? (
+            {loading ? (
+              <div className={`grid gap-6 ${
+                viewMode === 'grid' 
+                  ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
+                  : 'grid-cols-1'
+              }`}>
+                {Array.from({ length: 12 }).map((_, index) => (
+                  <div key={index} className="bg-card rounded-lg p-6 animate-pulse">
+                    <div className="bg-muted h-48 rounded-md mb-4"></div>
+                    <div className="bg-muted h-4 rounded mb-2"></div>
+                    <div className="bg-muted h-4 rounded w-3/4 mb-2"></div>
+                    <div className="bg-muted h-6 rounded w-1/2"></div>
+                  </div>
+                ))}
+              </div>
+            ) : error ? (
+              <div className="text-center py-12">
+                <h3 className="text-xl font-semibold text-foreground mb-2">Unable to load products</h3>
+                <p className="text-muted-foreground mb-4">{error}</p>
+                <Button onClick={() => window.location.reload()} variant="outline">
+                  Try Again
+                </Button>
+              </div>
+            ) : products.length === 0 ? (
               <div className="text-center py-12">
                 <h3 className="text-xl font-semibold text-foreground mb-2">No products found</h3>
                 <p className="text-muted-foreground">Try adjusting your filters</p>
@@ -258,8 +331,8 @@ const Shop = () => {
                   ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
                   : 'grid-cols-1'
               }`}>
-                {filteredProducts.map(product => (
-                  <ProductCard key={product.id} product={product} />
+                {products.map(product => (
+                  <ProductCard key={product._id || product.id} product={product} />
                 ))}
               </div>
             )}

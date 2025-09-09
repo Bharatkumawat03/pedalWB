@@ -1,12 +1,34 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import ProductCard from '@/components/product/ProductCard';
-import { products } from '@/data/products';
-import { ArrowRight, TrendingUp } from 'lucide-react';
+import productService from '@/services/productService';
+import { ArrowRight, TrendingUp, Loader2 } from 'lucide-react';
 
 const FeaturedProducts = () => {
-  const featuredProducts = products.filter(product => product.isFeatured);
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchFeaturedProducts = async () => {
+      try {
+        setLoading(true);
+        const products = await productService.getFeaturedProducts(8);
+        setFeaturedProducts(products);
+      } catch (err: any) {
+        console.error('Error fetching featured products:', err);
+        setError(err.message);
+        // Fallback to empty array if API fails
+        setFeaturedProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedProducts();
+  }, []);
 
   return (
     <section className="py-20 bg-muted/30">
@@ -38,9 +60,32 @@ const FeaturedProducts = () => {
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-          {featuredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {loading ? (
+            // Loading skeleton
+            Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="bg-card rounded-lg p-6 animate-pulse">
+                <div className="bg-muted h-48 rounded-md mb-4"></div>
+                <div className="bg-muted h-4 rounded mb-2"></div>
+                <div className="bg-muted h-4 rounded w-3/4 mb-2"></div>
+                <div className="bg-muted h-6 rounded w-1/2"></div>
+              </div>
+            ))
+          ) : error ? (
+            <div className="col-span-full text-center py-12">
+              <p className="text-muted-foreground mb-4">Unable to load featured products</p>
+              <Button onClick={() => window.location.reload()} variant="outline">
+                Try Again
+              </Button>
+            </div>
+          ) : featuredProducts.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <p className="text-muted-foreground">No featured products available</p>
+            </div>
+          ) : (
+            featuredProducts.map((product) => (
+              <ProductCard key={product._id || product.id} product={product} />
+            ))
+          )}
         </div>
 
         {/* Mobile View All Button */}

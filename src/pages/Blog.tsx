@@ -155,7 +155,7 @@ const Blog = () => {
                   </div>
                 </CardContent>
               </Card>
-            ))
+            ))}
           </div>
         </section>
 

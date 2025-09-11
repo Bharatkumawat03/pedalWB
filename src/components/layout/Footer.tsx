@@ -42,7 +42,7 @@ const Footer = () => {
     <footer className="bg-card border-t border-border">
       {/* Newsletter Section */}
       <div className="border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center max-w-2xl mx-auto">
             <h3 className="text-2xl font-bold text-foreground mb-4">
               Stay Ahead, Gear the Pack
@@ -65,7 +65,7 @@ const Footer = () => {
       </div>
 
       {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* Company Info */}
           <div className="lg:col-span-2">
@@ -152,7 +152,7 @@ const Footer = () => {
 
       {/* Bottom Footer */}
       <div className="border-t border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="text-muted-foreground text-sm mb-4 md:mb-0">
               © 2024 PedalBharat. All rights reserved.

@@ -189,26 +189,30 @@ const Contact = () => {
             </Card>
           </div>
 
-          {/* Support Options */}
-          <div className="space-y-6">
-            <Card className="bg-gradient-card border-border/50">
-              <CardHeader>
-                <CardTitle className="text-xl text-foreground">How can we help?</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {supportOptions.map((option, index) => (
-                  <div key={index} className="flex items-start gap-4 p-4 rounded-lg bg-background/50 border border-border/50">
-                    <div className="text-primary mt-1">
-                      {option.icon}
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-foreground">{option.title}</h4>
-                      <p className="text-sm text-muted-foreground">{option.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+            {/* Support Options */}
+            <div className="space-y-6">
+              <Card className="bg-gradient-card border-border/50">
+                <CardHeader>
+                  <CardTitle className="text-xl text-foreground">How can we help?</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {supportOptions.map((option, index) => (
+                    <Link 
+                      key={index}
+                      to="/contact"
+                      className="flex items-start gap-4 p-4 rounded-lg bg-background/50 border border-border/50 hover:bg-muted/50 transition-colors cursor-pointer"
+                    >
+                      <div className="text-primary mt-1">
+                        {option.icon}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground">{option.title}</h4>
+                        <p className="text-sm text-muted-foreground">{option.description}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </CardContent>
+              </Card>
 
             {/* FAQ Link */}
             <Card className="bg-primary text-primary-foreground">

@@ -173,16 +173,6 @@ const Shop = () => {
                 <CardTitle className="text-lg">Categories</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <button
-                  onClick={() => dispatch(setCategory('all'))}
-                  className={`block w-full text-left px-3 py-2 rounded-md transition-colors ${
-                    filters.category === 'all'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-muted'
-                  }`}
-                >
-                  All Categories
-                </button>
                 {categories.map(category => (
                   <button
                     key={category.id}
@@ -208,14 +198,48 @@ const Shop = () => {
                 <Slider
                   value={filters.priceRange}
                   onValueChange={(value) => dispatch(setPriceRange(value as [number, number]))}
-                  max={1000}
+                  max={250000}
                   min={0}
-                  step={10}
+                  step={1000}
                   className="w-full"
                 />
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>₹{filters.priceRange[0]}</span>
-                  <span>₹{filters.priceRange[1]}</span>
+                  <span>₹{filters.priceRange[0].toLocaleString()}</span>
+                  <span>₹{filters.priceRange[1].toLocaleString()}</span>
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <label className="block text-xs font-medium mb-1">Min Price</label>
+                    <input
+                      type="number"
+                      value={filters.priceRange[0]}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 0;
+                        if (value <= filters.priceRange[1]) {
+                          dispatch(setPriceRange([value, filters.priceRange[1]]));
+                        }
+                      }}
+                      className="w-full px-2 py-1 text-xs border border-border rounded bg-background"
+                      min="0"
+                      max={filters.priceRange[1]}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-medium mb-1">Max Price</label>
+                    <input
+                      type="number"
+                      value={filters.priceRange[1]}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 250000;
+                        if (value >= filters.priceRange[0]) {
+                          dispatch(setPriceRange([filters.priceRange[0], value]));
+                        }
+                      }}
+                      className="w-full px-2 py-1 text-xs border border-border rounded bg-background"
+                      min={filters.priceRange[0]}
+                      max="250000"
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>

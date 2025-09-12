@@ -114,47 +114,47 @@ const Blog = () => {
           <h2 className="text-2xl font-bold text-foreground mb-6">Featured Articles</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {filteredFeatured.map((post) => (
-              <Card key={post.id} className="group cursor-pointer transition-all duration-300 hover:shadow-hover bg-gradient-card border-border/50">
-                <div className="aspect-video bg-muted rounded-t-lg overflow-hidden">
-                  <img 
-                    src={post.image} 
-                    alt={post.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <CardHeader>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge variant="outline">{post.category}</Badge>
-                    <div className="flex items-center text-sm text-muted-foreground gap-4">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {new Date(post.date).toLocaleDateString('en-IN')}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {post.readTime}
-                      </span>
-                    </div>
+              <Link key={post.id} to={`/blog/${post.id}`}>
+                <Card className="group cursor-pointer transition-all duration-300 hover:shadow-hover bg-gradient-card border-border/50">
+                  <div className="aspect-video bg-muted rounded-t-lg overflow-hidden">
+                    <img 
+                      src={post.image} 
+                      alt={post.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
                   </div>
-                  <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
-                    {post.title}
-                  </h3>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">{post.excerpt}</p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <User className="w-4 h-4" />
-                      {post.author}
+                  <CardHeader>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="outline">{post.category}</Badge>
+                      <div className="flex items-center text-sm text-muted-foreground gap-4">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          {new Date(post.date).toLocaleDateString('en-IN')}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          {post.readTime}
+                        </span>
+                      </div>
                     </div>
-                    <Button asChild variant="ghost" size="sm" className="group-hover:bg-primary group-hover:text-primary-foreground">
-                      <Link to={`/blog/${post.id}`}>
+                    <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+                      {post.title}
+                    </h3>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground mb-4">{post.excerpt}</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <User className="w-4 h-4" />
+                        {post.author}
+                      </div>
+                      <Button variant="ghost" size="sm" className="group-hover:bg-primary group-hover:text-primary-foreground">
                         Read More <ArrowRight className="w-4 h-4 ml-2" />
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         </section>
@@ -164,36 +164,38 @@ const Blog = () => {
           <h2 className="text-2xl font-bold text-foreground mb-6">Latest Articles</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredRegular.map((post) => (
-              <Card key={post.id} className="group cursor-pointer transition-all duration-300 hover:shadow-card bg-card border-border/50">
-                <div className="aspect-video bg-muted rounded-t-lg overflow-hidden">
-                  <img 
-                    src={post.image} 
-                    alt={post.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge variant="outline" className="text-xs">{post.category}</Badge>
+              <Link key={post.id} to={`/blog/${post.id}`}>
+                <Card className="group cursor-pointer transition-all duration-300 hover:shadow-card bg-card border-border/50">
+                  <div className="aspect-video bg-muted rounded-t-lg overflow-hidden">
+                    <img 
+                      src={post.image} 
+                      alt={post.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                    {post.title}
-                  </h3>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-3">{post.excerpt}</p>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <User className="w-3 h-3" />
-                      {post.author}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {post.readTime}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="outline" className="text-xs">{post.category}</Badge>
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                      {post.title}
+                    </h3>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3">{post.excerpt}</p>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <User className="w-3 h-3" />
+                        {post.author}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {post.readTime}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         </section>

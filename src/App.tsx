@@ -24,6 +24,7 @@ import Shipping from "./pages/Shipping";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Refund from "./pages/Refund";
+import Checkout from "./pages/Checkout";
 import Cookies from "./pages/Cookies";
 import Press from "./pages/Press";
 import News from "./pages/News";
@@ -31,6 +32,7 @@ import BlogDetail from "./pages/BlogDetail";
 import PressDetail from "./pages/PressDetail";
 import NewsDetail from "./pages/NewsDetail";
 import NotFound from "./pages/NotFound";
+import Category from "./pages/Category";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +69,8 @@ const App = () => (
               <Route path="/press/:id" element={<PressDetail />} />
               <Route path="/news" element={<News />} />
               <Route path="/news/:id" element={<NewsDetail />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/category/:categoryId" element={<Category />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>

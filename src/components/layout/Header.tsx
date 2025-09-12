@@ -74,24 +74,34 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* Search Bar */}
-          <div className="hidden lg:flex items-center flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                type="text"
-                placeholder="Search cycling gear..."
-                value={searchValue}
-                onChange={(e) => dispatch(setSearch(e.target.value))}
-                className="pl-10 bg-muted/50 border-muted focus:border-primary"
-              />
+            {/* Search Bar */}
+            <div className="hidden lg:flex items-center flex-1 max-w-md mx-8">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Search cycling gear..."
+                  value={searchValue}
+                  onChange={(e) => dispatch(setSearch(e.target.value))}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && searchValue.trim()) {
+                      window.location.href = '/shop';
+                    }
+                  }}
+                  className="pl-10 bg-muted/50 border-muted focus:border-primary"
+                />
+              </div>
             </div>
-          </div>
 
           {/* Action Buttons */}
           <div className="flex items-center space-x-3">
             {/* Mobile Search */}
-            <Button variant="ghost" size="icon" className="lg:hidden">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="lg:hidden"
+              onClick={() => window.location.href = '/shop'}
+            >
               <Search className="w-5 h-5" />
             </Button>
 
@@ -161,6 +171,11 @@ const Header = () => {
                   placeholder="Search cycling gear..."
                   value={searchValue}
                   onChange={(e) => dispatch(setSearch(e.target.value))}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && searchValue.trim()) {
+                      window.location.href = '/shop';
+                    }
+                  }}
                   className="pl-10 bg-muted/50 border-muted"
                 />
               </div>

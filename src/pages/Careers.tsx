@@ -1,10 +1,14 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Clock, Users, Briefcase } from 'lucide-react';
+import JobApplicationForm from '@/components/forms/JobApplicationForm';
 
 const Careers = () => {
+  const [selectedPosition, setSelectedPosition] = useState<typeof positions[0] | null>(null);
+  
   const positions = [
     {
       title: 'Full Stack Developer',
@@ -107,8 +111,11 @@ const Careers = () => {
                         <Badge variant="outline">{position.type}</Badge>
                       </div>
                     </div>
-                    <Button asChild className="mt-4 md:mt-0">
-                      <Link to={`/contact?subject=${encodeURIComponent('Application for ' + position.title)}`}>Apply Now</Link>
+                    <Button 
+                      className="mt-4 md:mt-0"
+                      onClick={() => setSelectedPosition(position)}
+                    >
+                      Apply Now
                     </Button>
                   </div>
                 </CardHeader>
@@ -141,6 +148,14 @@ const Careers = () => {
             <a href="mailto:careers@pedalbharat.com?subject=Resume%20-%20Open%20Application">Send Us Your Resume</a>
           </Button>
         </div>
+
+        {/* Job Application Form Modal */}
+        {selectedPosition && (
+          <JobApplicationForm
+            position={selectedPosition}
+            onClose={() => setSelectedPosition(null)}
+          />
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, AppDispatch } from '@/store/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import authService from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,58 +23,120 @@ import {
 } from 'lucide-react';
 
 const Account = () => {
-  const [user] = useState({
-    name: 'Rajesh Kumar',
-    email: 'rajesh.kumar@example.com',
-    phone: '+91 98765 43210',
-    joinDate: '2023-06-15'
-  });
+  const dispatch = useDispatch<AppDispatch>();
+  const auth = useSelector((state: RootState) => state.auth);
+  const authUser = auth?.user;
+  const isAuthenticated = auth?.isAuthenticated || false;
+  const wishlistItemsCount = useSelector((state: RootState) => state.wishlist.items.length);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [orders] = useState([
-    {
-      id: 'ORD-2024-001',
-      date: '2024-01-15',
-      status: 'delivered',
-      total: 45000,
-      items: 2,
-      trackingId: 'TRK123456789'
-    },
-    {
-      id: 'ORD-2024-002',
-      date: '2024-01-10',
-      status: 'shipped',
-      total: 18000,
-      items: 1,
-      trackingId: 'TRK987654321'
-    },
-    {
-      id: 'ORD-2024-003',
-      date: '2024-01-08',
-      status: 'processing',
-      total: 92000,
-      items: 3,
-      trackingId: null
-    }
-  ]);
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!isAuthenticated) {
+        setLoading(false);
+        return;
+      }
 
-  const [addresses] = useState([
-    {
-      id: 1,
-      type: 'Home',
-      name: 'Rajesh Kumar',
-      address: '123 MG Road, Bangalore, Karnataka 560001',
-      phone: '+91 98765 43210',
-      isDefault: true
-    },
-    {
-      id: 2,
-      type: 'Office',
-      name: 'Rajesh Kumar',
-      address: '456 Brigade Road, Bangalore, Karnataka 560025',
-      phone: '+91 98765 43210',
-      isDefault: false
-    }
-  ]);
+      try {
+        const userData = await authService.getCurrentUser();
+        setUser(userData);
+      } catch (err: any) {
+        console.error('Error fetching user data:', err);
+        setError(err.message);
+        // Fallback to auth state user
+        if (authUser) {
+          setUser({
+            name: `${authUser.firstName} ${authUser.lastName}`,
+            email: authUser.email,
+            phone: '',
+            joinDate: new Date().toISOString().split('T')[0]
+          });
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [isAuthenticated, authUser]);
+
+  const [orders, setOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!isAuthenticated) {
+        setOrdersLoading(false);
+        return;
+      }
+
+      try {
+        // Note: Order service integration would go here
+        // For now, showing empty state since orders API is not implemented
+        setOrders([]);
+      } catch (err: any) {
+        console.error('Error fetching orders:', err);
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [isAuthenticated]);
+
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [addressesLoading, setAddressesLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      if (!isAuthenticated) {
+        setAddressesLoading(false);
+        return;
+      }
+
+      try {
+        // Note: User addresses service integration would go here
+        // For now, showing empty state since user addresses API is not fully implemented
+        setAddresses([]);
+      } catch (err: any) {
+        console.error('Error fetching addresses:', err);
+      } finally {
+        setAddressesLoading(false);
+      }
+    };
+
+    fetchAddresses();
+  }, [isAuthenticated]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-6 text-center">
+            <User className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+            <h2 className="text-xl font-semibold mb-2">Please Log In</h2>
+            <p className="text-muted-foreground mb-4">You need to be logged in to view your account.</p>
+            <Button onClick={() => window.location.href = '/login'} className="w-full">
+              Go to Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading account...</p>
+        </div>
+      </div>
+    );
+  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -112,13 +177,17 @@ const Account = () => {
                 <div className="text-center mb-6">
                   <Avatar className="w-20 h-20 mx-auto mb-4">
                     <AvatarFallback className="text-lg bg-primary text-primary-foreground">
-                      {user.name.split(' ').map(n => n[0]).join('')}
+                      {(user?.name || `${authUser?.firstName} ${authUser?.lastName}`).split(' ').map((n: string) => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>
-                  <h3 className="text-lg font-semibold text-foreground">{user.name}</h3>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {user?.name || `${authUser?.firstName} ${authUser?.lastName}`}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {user?.email || authUser?.email}
+                  </p>
                   <Badge variant="secondary" className="mt-2">
-                    Member since {new Date(user.joinDate).getFullYear()}
+                    Member since {user?.joinDate ? new Date(user.joinDate).getFullYear() : new Date().getFullYear()}
                   </Badge>
                 </div>
                 
@@ -129,7 +198,7 @@ const Account = () => {
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Heart className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">5 Wishlist Items</span>
+                    <span className="text-muted-foreground">{wishlistItemsCount} Wishlist Items</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <MapPin className="w-4 h-4 text-muted-foreground" />
@@ -172,38 +241,53 @@ const Account = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {orders.map((order) => (
-                        <div key={order.id} className="p-4 border border-border rounded-lg bg-background/50">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-3">
-                              {getStatusIcon(order.status)}
-                              <div>
-                                <h4 className="font-semibold text-foreground">{order.id}</h4>
-                                <p className="text-sm text-muted-foreground">
-                                  {new Date(order.date).toLocaleDateString('en-IN')} • {order.items} item{order.items > 1 ? 's' : ''}
-                                </p>
+                    {ordersLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
+                    ) : orders.length > 0 ? (
+                      <div className="space-y-4">
+                        {orders.map((order) => (
+                          <div key={order.id} className="p-4 border border-border rounded-lg bg-background/50">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-3">
+                                {getStatusIcon(order.status)}
+                                <div>
+                                  <h4 className="font-semibold text-foreground">{order.id}</h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    {new Date(order.date).toLocaleDateString('en-IN')} • {order.items} item{order.items > 1 ? 's' : ''}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-semibold text-foreground">₹{order.total.toLocaleString('en-IN')}</p>
+                                {getStatusBadge(order.status)}
                               </div>
                             </div>
-                            <div className="text-right">
-                              <p className="font-semibold text-foreground">₹{order.total.toLocaleString('en-IN')}</p>
-                              {getStatusBadge(order.status)}
-                            </div>
+                            
+                            {order.trackingId && (
+                              <div className="flex items-center justify-between pt-3 border-t border-border">
+                                <span className="text-sm text-muted-foreground">
+                                  Tracking ID: {order.trackingId}
+                                </span>
+                                <Button variant="outline" size="sm">
+                                  Track Order
+                                </Button>
+                              </div>
+                            )}
                           </div>
-                          
-                          {order.trackingId && (
-                            <div className="flex items-center justify-between pt-3 border-t border-border">
-                              <span className="text-sm text-muted-foreground">
-                                Tracking ID: {order.trackingId}
-                              </span>
-                              <Button variant="outline" size="sm">
-                                Track Order
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <ShoppingBag className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                        <h3 className="text-lg font-semibold mb-2">No Orders Yet</h3>
+                        <p className="text-muted-foreground mb-4">Start shopping to see your orders here!</p>
+                        <Button onClick={() => window.location.href = '/shop'}>
+                          Browse Products
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

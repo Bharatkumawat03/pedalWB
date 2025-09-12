@@ -1,6 +1,7 @@
+import { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '@/store/store';
-import { removeFromWishlist } from '@/store/slices/wishlistSlice';
+import { RootState, AppDispatch } from '@/store/store';
+import { fetchWishlist, removeFromWishlist, toggleWishlist } from '@/store/slices/wishlistSlice';
 import { addToCart } from '@/store/slices/cartSlice';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,22 +10,61 @@ import { Link } from 'react-router-dom';
 import { Heart, ShoppingCart, Trash2, ArrowLeft } from 'lucide-react';
 
 const Wishlist = () => {
-  const dispatch = useDispatch();
-  const wishlistItems = useSelector((state: RootState) => state.wishlist.items);
+  const dispatch = useDispatch<AppDispatch>();
+  const { items: wishlistItems, isLoading, error } = useSelector((state: RootState) => state.wishlist);
+  const auth = useSelector((state: RootState) => state.auth);
+  const isAuthenticated = auth?.isAuthenticated || false;
 
-  const handleRemoveFromWishlist = (id: string) => {
-    dispatch(removeFromWishlist(id));
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchWishlist());
+    }
+  }, [dispatch, isAuthenticated]);
+
+  const handleRemoveFromWishlist = (productId: string) => {
+    dispatch(removeFromWishlist(productId));
   };
 
   const handleAddToCart = (item: any) => {
     dispatch(addToCart({
-      id: item.id,
-      name: item.name,
-      price: item.price,
-      image: item.image,
-      category: item.category,
+      productId: item.product?._id || item.product?.id || item._id,
+      quantity: 1,
+      selectedColor: undefined,
+      selectedSize: undefined
     }));
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading wishlist...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <Heart className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
+            <h1 className="text-3xl font-bold text-foreground mb-4">Please Log In</h1>
+            <p className="text-muted-foreground mb-8">
+              You need to be logged in to view your wishlist.
+            </p>
+            <Link to="/login">
+              <Button size="lg" className="bg-primary hover:bg-primary/90">
+                Log In
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (wishlistItems.length === 0) {
     return (
@@ -66,14 +106,14 @@ const Wishlist = () => {
 
         {/* Wishlist Items */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {wishlistItems.map((item) => (
-            <Card key={item.id} className="group overflow-hidden hover:shadow-hover transition-all duration-300">
+          {wishlistItems.map((item: any) => (
+            <Card key={item._id || item.id} className="group overflow-hidden hover:shadow-hover transition-all duration-300">
               <div className="relative">
                 {/* Product Image */}
                 <div className="aspect-square overflow-hidden bg-muted/30">
                   <img
-                    src={item.image}
-                    alt={item.name}
+                    src={item.product?.images?.[0]?.url || item.product?.image || '/placeholder-product.jpg'}
+                    alt={item.product?.name || 'Product'}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 </div>
@@ -83,26 +123,26 @@ const Wishlist = () => {
                   size="icon"
                   variant="ghost"
                   className="absolute top-3 right-3 w-8 h-8 bg-background/80 backdrop-blur-sm hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  onClick={() => handleRemoveFromWishlist(item.id)}
+                  onClick={() => handleRemoveFromWishlist(item.product?._id || item.product?.id || item._id)}
                 >
                   <Trash2 className="w-4 h-4 text-destructive" />
                 </Button>
               </div>
 
               <CardContent className="p-4">
-                <Link to={`/product/${item.id}`} className="block group">
+                <Link to={`/product/${item.product?._id || item.product?.id}`} className="block group">
                   <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors duration-200 line-clamp-2 mb-2">
-                    {item.name}
+                    {item.product?.name || 'Unknown Product'}
                   </h3>
                 </Link>
 
                 <Badge variant="secondary" className="mb-3">
-                  {item.category}
+                  {item.product?.category || 'N/A'}
                 </Badge>
 
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-lg font-bold text-foreground">
-                    ₹{item.price.toLocaleString()}
+                    ₹{(item.product?.price || item.price || 0).toLocaleString()}
                   </span>
                 </div>
 
@@ -117,7 +157,7 @@ const Wishlist = () => {
                   </Button>
                   
                   <Button
-                    onClick={() => handleRemoveFromWishlist(item.id)}
+                    onClick={() => handleRemoveFromWishlist(item.product?._id || item.product?.id || item._id)}
                     variant="outline"
                     className="w-full text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
                     size="sm"

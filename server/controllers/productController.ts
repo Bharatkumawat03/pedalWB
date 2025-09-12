@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import Product, { IProduct } from '../models/Product';
 import { AuthenticatedRequest } from '../types';
+import productService from '../services/productService';
 
 // @desc    Get all products
 // @route   GET /api/products
@@ -9,94 +9,26 @@ export const getProducts = async (req: Request, res: Response, next: NextFunctio
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 12;
-    const skip = (page - 1) * limit;
 
-    // Build query object
-    const query: any = {};
+    const query = {
+      search: req.query.search as string,
+      category: req.query.category as string,
+      brand: req.query.brand as string,
+      minPrice: req.query.minPrice ? parseFloat(req.query.minPrice as string) : undefined,
+      maxPrice: req.query.maxPrice ? parseFloat(req.query.maxPrice as string) : undefined,
+      status: (req.query.status as string) || 'active',
+      featured: req.query.featured === 'true',
+      sortBy: req.query.sortBy as string
+    };
 
-    // Search by name or description
-    if (req.query.search) {
-      query.$or = [
-        { name: { $regex: req.query.search, $options: 'i' } },
-        { description: { $regex: req.query.search, $options: 'i' } }
-      ];
-    }
-
-    // Filter by category
-    if (req.query.category && req.query.category !== 'all') {
-      query.category = req.query.category;
-    }
-
-    // Filter by brand
-    if (req.query.brand && req.query.brand !== 'all') {
-      query.brand = req.query.brand;
-    }
-
-    // Filter by price range
-    if (req.query.minPrice || req.query.maxPrice) {
-      query.price = {};
-      if (req.query.minPrice) {
-        query.price.$gte = parseFloat(req.query.minPrice as string);
-      }
-      if (req.query.maxPrice) {
-        query.price.$lte = parseFloat(req.query.maxPrice as string);
-      }
-    }
-
-    // Filter by status (active by default)
-    query.status = req.query.status || 'active';
-
-    // Filter by featured
-    if (req.query.featured === 'true') {
-      query.featured = true;
-    }
-
-    // Sort options
-    let sortBy: any = { createdAt: -1 }; // Default sort
-    if (req.query.sortBy) {
-      switch (req.query.sortBy) {
-        case 'price-asc':
-          sortBy = { price: 1 };
-          break;
-        case 'price-desc':
-          sortBy = { price: -1 };
-          break;
-        case 'name-asc':
-          sortBy = { name: 1 };
-          break;
-        case 'name-desc':
-          sortBy = { name: -1 };
-          break;
-        case 'rating':
-          sortBy = { 'rating.average': -1 };
-          break;
-        case 'newest':
-          sortBy = { createdAt: -1 };
-          break;
-        case 'oldest':
-          sortBy = { createdAt: 1 };
-          break;
-      }
-    }
-
-    const products = await Product.find(query)
-      .skip(skip)
-      .limit(limit)
-      .sort(sortBy)
-      .populate('category', 'name slug');
-
-    const total = await Product.countDocuments(query);
+    const result = await productService.getProducts(query, { page, limit });
 
     res.status(200).json({
       success: true,
-      count: products.length,
-      total,
-      pagination: {
-        page,
-        limit,
-        pages: Math.ceil(total / limit)
-      },
-      data: products
+      count: result.products.length,
+      total: result.total,
+      pagination: result.pagination,
+      data: result.products
     });
   } catch (error) {
     next(error);
@@ -108,7 +40,7 @@ export const getProducts = async (req: Request, res: Response, next: NextFunctio
 // @access  Public
 export const getProduct = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const product = await Product.findById(req.params.id).populate('category', 'name slug');
+    const product = await productService.getProductById(req.params.id);
 
     if (!product) {
       res.status(404).json({
@@ -132,7 +64,7 @@ export const getProduct = async (req: Request, res: Response, next: NextFunction
 // @access  Public
 export const getProductBySlug = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const product = await Product.findOne({ slug: req.params.slug }).populate('category', 'name slug');
+    const product = await productService.getProductBySlug(req.params.slug);
 
     if (!product) {
       res.status(404).json({
@@ -156,7 +88,7 @@ export const getProductBySlug = async (req: Request, res: Response, next: NextFu
 // @access  Private/Admin
 export const createProduct = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const product = await Product.create(req.body);
+    const product = await productService.createProduct(req.body);
 
     res.status(201).json({
       success: true,
@@ -172,10 +104,7 @@ export const createProduct = async (req: AuthenticatedRequest, res: Response, ne
 // @access  Private/Admin
 export const updateProduct = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true
-    });
+    const product = await productService.updateProduct(req.params.id, req.body);
 
     if (!product) {
       res.status(404).json({
@@ -199,7 +128,7 @@ export const updateProduct = async (req: AuthenticatedRequest, res: Response, ne
 // @access  Private/Admin
 export const deleteProduct = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await productService.deleteProduct(req.params.id);
 
     if (!product) {
       res.status(404).json({
@@ -208,8 +137,6 @@ export const deleteProduct = async (req: AuthenticatedRequest, res: Response, ne
       });
       return;
     }
-
-    await Product.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
       success: true,
@@ -226,14 +153,7 @@ export const deleteProduct = async (req: AuthenticatedRequest, res: Response, ne
 export const getFeaturedProducts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const limit = parseInt(req.query.limit as string) || 8;
-
-    const products = await Product.find({ 
-      featured: true, 
-      status: 'active' 
-    })
-      .limit(limit)
-      .sort({ createdAt: -1 })
-      .populate('category', 'name slug');
+    const products = await productService.getFeaturedProducts(limit);
 
     res.status(200).json({
       success: true,
@@ -250,33 +170,12 @@ export const getFeaturedProducts = async (req: Request, res: Response, next: Nex
 // @access  Public
 export const getProductsByCategory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 12;
-    const skip = (page - 1) * limit;
-
-    const products = await Product.find({ 
-      category: req.params.category,
-      status: 'active'
-    })
-      .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 })
-      .populate('category', 'name slug');
-
-    const total = await Product.countDocuments({ 
-      category: req.params.category,
-      status: 'active'
-    });
+    const products = await productService.getProductsByCategory(req.params.category, limit);
 
     res.status(200).json({
       success: true,
       count: products.length,
-      total,
-      pagination: {
-        page,
-        limit,
-        pages: Math.ceil(total / limit)
-      },
       data: products
     });
   } catch (error) {
@@ -289,7 +188,7 @@ export const getProductsByCategory = async (req: Request, res: Response, next: N
 // @access  Public
 export const getRelatedProducts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await productService.getProductById(req.params.id);
 
     if (!product) {
       res.status(404).json({
@@ -301,17 +200,11 @@ export const getRelatedProducts = async (req: Request, res: Response, next: Next
 
     const limit = parseInt(req.query.limit as string) || 6;
 
-    const relatedProducts = await Product.find({
-      _id: { $ne: product._id },
-      $or: [
-        { category: product.category },
-        { brand: product.brand }
-      ],
-      status: 'active'
-    })
-      .limit(limit)
-      .sort({ 'rating.average': -1 })
-      .populate('category', 'name slug');
+    const relatedProducts = await productService.getRelatedProducts(
+      req.params.id, 
+      product.category.toString(), 
+      limit
+    );
 
     res.status(200).json({
       success: true,

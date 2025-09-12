@@ -16,7 +16,7 @@ export interface LoginData {
 }
 
 export interface AuthResponse {
-  user: Omit<IUser, 'password'>;
+  user: any;
   token: string;
 }
 
@@ -32,10 +32,11 @@ class AuthService {
     const user = await User.create(userData);
 
     // Generate token
-    const token = this.generateToken(user._id.toString());
+    const token = this.generateToken((user._id as any).toString());
 
     // Remove password from response
-    const { password, ...userResponse } = user.toObject();
+    const userObj = user.toObject();
+    const { password: _, ...userResponse } = userObj;
 
     return {
       user: userResponse,
@@ -59,10 +60,11 @@ class AuthService {
     }
 
     // Generate token
-    const token = this.generateToken(user._id.toString());
+    const token = this.generateToken((user._id as any).toString());
 
     // Remove password from response
-    const { password, ...userResponse } = user.toObject();
+    const userObj = user.toObject();
+    const { password: _, ...userResponse } = userObj;
 
     return {
       user: userResponse,
@@ -70,12 +72,12 @@ class AuthService {
     };
   }
 
-  async getCurrentUser(userId: string): Promise<Omit<IUser, 'password'> | null> {
+  async getCurrentUser(userId: string): Promise<any> {
     const user = await User.findById(userId).select('-password');
     return user;
   }
 
-  async updateProfile(userId: string, updateData: Partial<IUser>): Promise<Omit<IUser, 'password'> | null> {
+  async updateProfile(userId: string, updateData: Partial<IUser>): Promise<any> {
     // Remove password from update data if present
     const { password, ...safeUpdateData } = updateData;
 
@@ -152,11 +154,11 @@ class AuthService {
     await user.save();
 
     // Generate new auth token
-    const token = this.generateToken(user._id);
+    const token = this.generateToken((user._id as any).toString());
 
     // Remove password from response
-    const userResponse = user.toObject();
-    delete userResponse.password;
+    const userObj = user.toObject();
+    const { password: _, ...userResponse } = userObj;
 
     return {
       user: userResponse,
@@ -169,10 +171,13 @@ class AuthService {
   }
 
   private generateToken(userId: string): string {
-    const secret = process.env.JWT_SECRET || 'fallback_secret_key';
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error('JWT_SECRET environment variable is required');
+    }
     return jwt.sign({ id: userId }, secret, {
       expiresIn: process.env.JWT_EXPIRE || '30d'
-    });
+    } as jwt.SignOptions);
   }
 
   private generateResetToken(): string {
@@ -181,7 +186,10 @@ class AuthService {
   }
 
   verifyToken(token: string): { id: string } {
-    const secret = process.env.JWT_SECRET || 'fallback_secret_key';
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error('JWT_SECRET environment variable is required');
+    }
     return jwt.verify(token, secret) as { id: string };
   }
 }

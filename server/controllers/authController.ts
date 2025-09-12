@@ -173,12 +173,11 @@ export const updatePassword = async (req: AuthenticatedRequest, res: Response, n
 export const forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     try {
-      const resetToken = await authService.forgotPassword(req.body.email);
+      await authService.forgotPassword(req.body.email);
       
       res.status(200).json({
         success: true,
-        message: 'Reset token generated successfully',
-        resetToken
+        message: 'Reset token has been sent to your email'
       });
     } catch (error: any) {
       res.status(404).json({

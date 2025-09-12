@@ -65,7 +65,7 @@ class CartService {
     } else {
       // Add new item to cart
       user.cart.push({
-        product: productId,
+        product: productId as any,
         quantity,
         selectedColor,
         selectedSize,
@@ -94,7 +94,7 @@ class CartService {
       throw new Error('User not found');
     }
 
-    const cartItem = user.cart.id(itemId);
+    const cartItem = (user.cart as any).id(itemId);
     if (!cartItem) {
       throw new Error('Cart item not found');
     }
@@ -136,7 +136,7 @@ class CartService {
     }
 
     // Remove item using Mongoose array methods
-    const cartItem = user.cart.id(itemId);
+    const cartItem = (user.cart as any).id(itemId);
     if (!cartItem) {
       throw new Error('Cart item not found');
     }

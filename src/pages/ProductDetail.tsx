@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/store/store';
 import { addToCart } from '@/store/slices/cartSlice';
-import { toggleWishlistAsync } from '@/store/slices/wishlistSlice';
+import { toggleWishlist } from '@/store/slices/wishlistSlice';
 import productService from '@/services/productService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,12 +29,6 @@ const ProductDetail = () => {
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
-
-  // Local cart and wishlist state for immediate feedback
-  const [localCart, setLocalCart] = useState<any[]>([]);
-  const [localWishlist, setLocalWishlist] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -56,36 +50,12 @@ const ProductDetail = () => {
 
     fetchProduct();
   }, [id]);
-
-  // Load local cart and wishlist from localStorage on mount
-  useEffect(() => {
-    const savedCart = localStorage.getItem('pedalBharat_cart');
-    const savedWishlist = localStorage.getItem('pedalBharat_wishlist');
-    
-    if (savedCart) {
-      try {
-        const cartData = JSON.parse(savedCart);
-        setLocalCart(cartData.items || []);
-      } catch (error) {
-        console.error('Error loading cart from localStorage:', error);
-      }
-    }
-    
-    if (savedWishlist) {
-      try {
-        const wishlistData = JSON.parse(savedWishlist);
-        setLocalWishlist(wishlistData.items || []);
-      } catch (error) {
-        console.error('Error loading wishlist from localStorage:', error);
-      }
-    }
-  }, []);
   
-  // Check if product is in local wishlist
-  const isInWishlist = localWishlist.some((item: any) => 
-    item.product?._id === id || 
-    item.product?.id === id ||
-    item._id === id ||
+  // Safely access wishlist state with fallback
+  const wishlistState = useSelector((state: RootState) => state.wishlist);
+  const wishlistItems = wishlistState?.items || [];
+  
+  const isInWishlist = wishlistItems.some((item: any) => 
     item.id === id
   );
 
@@ -130,129 +100,30 @@ const ProductDetail = () => {
     );
   }
 
-  const handleAddToCart = async () => {
-    if (!id || isAddingToCart) return;
-    
-    setIsAddingToCart(true);
-    
-    try {
-      // Try Redux first
-      await dispatch(addToCart({ 
-        productId: id, 
-        quantity,
-        selectedColor: undefined,
-        selectedSize: undefined
-      }));
-      console.log('Added to cart successfully via Redux');
-    } catch (error) {
-      console.error('Redux cart failed, using local storage:', error);
-      
-      // Fallback to local storage
-      const cartItem = {
-        _id: `local_${Date.now()}`,
-        product: {
-          _id: id,
+  const handleAddToCart = () => {
+    if (id) {
+      // Add multiple quantities
+      for (let i = 0; i < quantity; i++) {
+        dispatch(addToCart({
+          id: id,
           name: product.name,
           price: product.price,
           image: product.image,
-          category: product.category,
-          brand: product.brand
-        },
-        quantity,
-        selectedColor: undefined,
-        selectedSize: undefined,
-        itemTotal: product.price * quantity,
-        addedAt: new Date().toISOString()
-      };
-
-      const existingItemIndex = localCart.findIndex(item => 
-        item.product._id === id && 
-        item.selectedColor === undefined && 
-        item.selectedSize === undefined
-      );
-
-      let updatedCart;
-      if (existingItemIndex >= 0) {
-        updatedCart = [...localCart];
-        updatedCart[existingItemIndex].quantity += quantity;
-        updatedCart[existingItemIndex].itemTotal = updatedCart[existingItemIndex].quantity * product.price;
-      } else {
-        updatedCart = [...localCart, cartItem];
+          category: product.category || product.brand || 'General'
+        }));
       }
-
-      setLocalCart(updatedCart);
-      
-      // Save to localStorage
-      const cartData = {
-        items: updatedCart,
-        summary: {
-          itemCount: updatedCart.reduce((sum, item) => sum + item.quantity, 0),
-          subtotal: updatedCart.reduce((sum, item) => sum + item.itemTotal, 0),
-          tax: 0,
-          shipping: 0,
-          total: updatedCart.reduce((sum, item) => sum + item.itemTotal, 0),
-          freeShippingThreshold: 999,
-          freeShippingEligible: false
-        }
-      };
-      
-      localStorage.setItem('pedalBharat_cart', JSON.stringify(cartData));
-      console.log('Added to cart successfully via localStorage');
-    } finally {
-      setIsAddingToCart(false);
     }
   };
 
-  const handleToggleWishlist = async () => {
-    if (!id || isTogglingWishlist) return;
-    
-    setIsTogglingWishlist(true);
-    
-    try {
-      // Try Redux first
-      await dispatch(toggleWishlistAsync(id));
-      console.log('Toggled wishlist successfully via Redux');
-    } catch (error) {
-      console.error('Redux wishlist failed, using local storage:', error);
-      
-      // Fallback to local storage
-      const wishlistItem = {
-        _id: `local_${Date.now()}`,
-        product: {
-          _id: id,
-          name: product.name,
-          price: product.price,
-          image: product.image,
-          category: product.category,
-          brand: product.brand
-        },
-        addedAt: new Date().toISOString()
-      };
-
-      const existingItemIndex = localWishlist.findIndex(item => 
-        item.product._id === id || item._id === id || item.id === id
-      );
-
-      let updatedWishlist;
-      if (existingItemIndex >= 0) {
-        // Remove from wishlist
-        updatedWishlist = localWishlist.filter((_, index) => index !== existingItemIndex);
-      } else {
-        // Add to wishlist
-        updatedWishlist = [...localWishlist, wishlistItem];
-      }
-
-      setLocalWishlist(updatedWishlist);
-      
-      // Save to localStorage
-      const wishlistData = {
-        items: updatedWishlist
-      };
-      
-      localStorage.setItem('pedalBharat_wishlist', JSON.stringify(wishlistData));
-      console.log('Toggled wishlist successfully via localStorage');
-    } finally {
-      setIsTogglingWishlist(false);
+  const handleToggleWishlist = () => {
+    if (id) {
+      dispatch(toggleWishlist({
+        id: id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        category: product.category || product.brand || 'General'
+      }));
     }
   };
 
@@ -277,7 +148,6 @@ const ProductDetail = () => {
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
-  // Fix stock checking to handle both backend and frontend structures
   const isOutOfStock = !product.inStock || (product.stock !== undefined && product.stock <= 0);
 
   // Safely extract rating values
@@ -451,17 +321,16 @@ const ProductDetail = () => {
               <div className="flex gap-3">
                 <Button
                   onClick={handleAddToCart}
-                  disabled={isOutOfStock || isAddingToCart}
+                  disabled={isOutOfStock}
                   className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
                   size="lg"
                 >
                   <ShoppingCart className="w-5 h-5 mr-2" />
-                  {isAddingToCart ? 'Adding...' : 'Add to Cart'}
+                  Add to Cart
                 </Button>
                 
                 <Button
                   onClick={handleToggleWishlist}
-                  disabled={isTogglingWishlist}
                   variant="outline"
                   size="lg"
                   className="px-6"

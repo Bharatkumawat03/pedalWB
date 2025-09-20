@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/store/store';
 import { addToCart } from '@/store/slices/cartSlice';
-import { toggleWishlistAsync } from '@/store/slices/wishlistSlice';
+import { toggleWishlist } from '@/store/slices/wishlistSlice';
 import { Product } from '@/data/products';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,8 +19,6 @@ interface ProductCardProps {
 const ProductCard = ({ product, className = '' }: ProductCardProps) => {
   const dispatch = useDispatch<AppDispatch>();
   const [isHovered, setIsHovered] = useState(false);
-  const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
   
   // Safely access wishlist state with fallback
   const wishlistState = useSelector((state: RootState) => state.wishlist);
@@ -28,157 +26,34 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
   
   // Handle both backend and frontend wishlist structures
   const isInWishlist = wishlistItems.some((item: any) => 
-    item.product?._id === (product._id || product.id) || 
     item.id === (product._id || product.id)
   );
 
-  const handleAddToCart = async (e: React.MouseEvent) => {
+  const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     const productId = product._id || product.id;
-    if (!productId || isAddingToCart) return;
-    
-    setIsAddingToCart(true);
-    
-    try {
-      // Try Redux first
-      await dispatch(addToCart({ 
-        productId, 
-        quantity: 1,
-        selectedColor: undefined,
-        selectedSize: undefined
+    if (productId) {
+      dispatch(addToCart({
+        id: productId,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        category: product.category || product.brand || 'General'
       }));
-      console.log('Added to cart successfully via Redux');
-    } catch (error) {
-      console.error('Redux cart failed, using local storage:', error);
-      
-      // Fallback to local storage
-      const cartItem = {
-        _id: `local_${Date.now()}`,
-        product: {
-          _id: productId,
-          name: product.name,
-          price: product.price,
-          image: product.image,
-          category: product.category,
-          brand: product.brand
-        },
-        quantity: 1,
-        selectedColor: undefined,
-        selectedSize: undefined,
-        itemTotal: product.price,
-        addedAt: new Date().toISOString()
-      };
-
-      // Get existing cart from localStorage
-      const savedCart = localStorage.getItem('pedalBharat_cart');
-      let existingCart = [];
-      if (savedCart) {
-        try {
-          const cartData = JSON.parse(savedCart);
-          existingCart = cartData.items || [];
-        } catch (error) {
-          console.error('Error loading cart from localStorage:', error);
-        }
-      }
-
-      const existingItemIndex = existingCart.findIndex(item => 
-        item.product._id === productId && 
-        item.selectedColor === undefined && 
-        item.selectedSize === undefined
-      );
-
-      let updatedCart;
-      if (existingItemIndex >= 0) {
-        updatedCart = [...existingCart];
-        updatedCart[existingItemIndex].quantity += 1;
-        updatedCart[existingItemIndex].itemTotal = updatedCart[existingItemIndex].quantity * product.price;
-      } else {
-        updatedCart = [...existingCart, cartItem];
-      }
-
-      // Save to localStorage
-      const cartData = {
-        items: updatedCart,
-        summary: {
-          itemCount: updatedCart.reduce((sum, item) => sum + item.quantity, 0),
-          subtotal: updatedCart.reduce((sum, item) => sum + item.itemTotal, 0),
-          tax: 0,
-          shipping: 0,
-          total: updatedCart.reduce((sum, item) => sum + item.itemTotal, 0),
-          freeShippingThreshold: 999,
-          freeShippingEligible: false
-        }
-      };
-      
-      localStorage.setItem('pedalBharat_cart', JSON.stringify(cartData));
-      console.log('Added to cart successfully via localStorage');
-    } finally {
-      setIsAddingToCart(false);
     }
   };
 
-  const handleToggleWishlist = async (e: React.MouseEvent) => {
+  const handleToggleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     const productId = product._id || product.id;
-    if (!productId || isTogglingWishlist) return;
-    
-    setIsTogglingWishlist(true);
-    
-    try {
-      // Try Redux first
-      await dispatch(toggleWishlistAsync(productId));
-      console.log('Toggled wishlist successfully via Redux');
-    } catch (error) {
-      console.error('Redux wishlist failed, using local storage:', error);
-      
-      // Fallback to local storage
-      const wishlistItem = {
-        _id: `local_${Date.now()}`,
-        product: {
-          _id: productId,
-          name: product.name,
-          price: product.price,
-          image: product.image,
-          category: product.category,
-          brand: product.brand
-        },
-        addedAt: new Date().toISOString()
-      };
-
-      // Get existing wishlist from localStorage
-      const savedWishlist = localStorage.getItem('pedalBharat_wishlist');
-      let existingWishlist = [];
-      if (savedWishlist) {
-        try {
-          const wishlistData = JSON.parse(savedWishlist);
-          existingWishlist = wishlistData.items || [];
-        } catch (error) {
-          console.error('Error loading wishlist from localStorage:', error);
-        }
-      }
-
-      const existingItemIndex = existingWishlist.findIndex(item => 
-        item.product._id === productId || item._id === productId || item.id === productId
-      );
-
-      let updatedWishlist;
-      if (existingItemIndex >= 0) {
-        // Remove from wishlist
-        updatedWishlist = existingWishlist.filter((_, index) => index !== existingItemIndex);
-      } else {
-        // Add to wishlist
-        updatedWishlist = [...existingWishlist, wishlistItem];
-      }
-
-      // Save to localStorage
-      const wishlistData = {
-        items: updatedWishlist
-      };
-      
-      localStorage.setItem('pedalBharat_wishlist', JSON.stringify(wishlistData));
-      console.log('Toggled wishlist successfully via localStorage');
-    } finally {
-      setIsTogglingWishlist(false);
+    if (productId) {
+      dispatch(toggleWishlist({
+        id: productId,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        category: product.category || product.brand || 'General'
+      }));
     }
   };
 
@@ -249,7 +124,6 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
             variant="ghost"
             className="w-8 h-8 bg-background/80 backdrop-blur-sm hover:bg-background"
             onClick={handleToggleWishlist}
-            disabled={isTogglingWishlist}
           >
             <Heart 
               className={`w-4 h-4 ${isInWishlist ? 'fill-primary text-primary' : 'text-muted-foreground'}`} 
@@ -270,12 +144,12 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
         <div className={`absolute bottom-3 left-3 right-3 transition-all duration-300 ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
           <Button
             onClick={handleAddToCart}
-            disabled={isOutOfStock || isAddingToCart}
+            disabled={isOutOfStock}
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
             size="sm"
           >
             <ShoppingCart className="w-4 h-4 mr-2" />
-            {isAddingToCart ? 'Adding...' : 'Add to Cart'}
+            Add to Cart
           </Button>
         </div>
       </div>

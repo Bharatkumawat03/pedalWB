@@ -40,26 +40,50 @@ const Account = () => {
   const [addresses, setAddresses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>({});
+
+  // Debug authentication state
+  useEffect(() => {
+    setDebugInfo({
+      reduxAuth: auth,
+      localStorageToken: localStorage.getItem('token'),
+      localStorageUser: localStorage.getItem('user'),
+      isAuthenticatedRedux: isAuthenticated,
+      isAuthenticatedLocal: !!localStorage.getItem('token')
+    });
+  }, [auth, isAuthenticated]);
 
   // Load user data from backend
   useEffect(() => {
     const loadUserData = async () => {
-      if (!isAuthenticated) return;
+      if (!isAuthenticated) {
+        console.log('User not authenticated, skipping API calls');
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
         setError(null);
         
+        console.log('Loading user data...', { isAuthenticated, user });
+        
         // Load user profile
+        console.log('Fetching user profile...');
         const profileResponse = await userService.getUserProfile();
+        console.log('Profile response:', profileResponse);
         setUserProfile(profileResponse.data);
         
         // Load user orders
+        console.log('Fetching user orders...');
         const ordersResponse = await orderService.getUserOrders();
+        console.log('Orders response:', ordersResponse);
         setOrders(ordersResponse.data || []);
         
         // Load user addresses
+        console.log('Fetching user addresses...');
         const addressesResponse = await userService.getAddresses();
+        console.log('Addresses response:', addressesResponse);
         setAddresses(addressesResponse || []);
         
       } catch (err: any) {
@@ -130,6 +154,15 @@ const Account = () => {
             <p className="text-muted-foreground mb-8">
               Please sign in to view and manage your account.
             </p>
+            
+            {/* Debug Info */}
+            <div className="mb-8 p-4 bg-gray-100 rounded-lg text-left max-w-2xl mx-auto">
+              <h3 className="font-semibold mb-2">Debug Info:</h3>
+              <pre className="text-xs overflow-auto">
+                {JSON.stringify(debugInfo, null, 2)}
+              </pre>
+            </div>
+            
             <div className="flex gap-4 justify-center">
               <Link to="/login">
                 <Button size="lg" className="bg-primary hover:bg-primary/90">
@@ -168,6 +201,15 @@ const Account = () => {
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground mb-4">Error Loading Account</h1>
             <p className="text-muted-foreground mb-8">{error}</p>
+            
+            {/* Debug Info */}
+            <div className="mb-8 p-4 bg-gray-100 rounded-lg text-left max-w-2xl mx-auto">
+              <h3 className="font-semibold mb-2">Debug Info:</h3>
+              <pre className="text-xs overflow-auto">
+                {JSON.stringify(debugInfo, null, 2)}
+              </pre>
+            </div>
+            
             <Button onClick={() => window.location.reload()}>
               Try Again
             </Button>

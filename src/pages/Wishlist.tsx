@@ -11,7 +11,13 @@ import { Heart, ShoppingCart, Trash2, ArrowLeft } from 'lucide-react';
 
 const Wishlist = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { items: wishlistItems, isLoading, error } = useSelector((state: RootState) => state.wishlist);
+  
+  // Safe access to wishlist state with fallbacks
+  const wishlistState = useSelector((state: RootState) => state.wishlist);
+  const wishlistItems = wishlistState?.items || [];
+  const isLoading = wishlistState?.isLoading || false;
+  const error = wishlistState?.error || null;
+  
   const auth = useSelector((state: RootState) => state.auth);
   const isAuthenticated = auth?.isAuthenticated || false;
 
@@ -39,7 +45,24 @@ const Wishlist = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading wishlist...</p>
+          <p className="text-muted-foreground">Loading your wishlist...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-destructive mb-4">
+            <Heart className="w-16 h-16 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Error Loading Wishlist</h2>
+            <p className="text-muted-foreground">{error}</p>
+          </div>
+          <Button onClick={() => dispatch(fetchWishlist())} variant="outline">
+            Try Again
+          </Button>
         </div>
       </div>
     );
@@ -47,14 +70,14 @@ const Wishlist = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-background py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <Heart className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
-            <h1 className="text-3xl font-bold text-foreground mb-4">Please Log In</h1>
-            <p className="text-muted-foreground mb-8">
-              You need to be logged in to view your wishlist.
-            </p>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Heart className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
+          <h1 className="text-3xl font-bold text-foreground mb-4">Please Log In</h1>
+          <p className="text-muted-foreground mb-8">
+            You need to be logged in to view your wishlist.
+          </p>
+          <div className="flex gap-4 justify-center">
             <Link to="/login">
               <Button size="lg" className="bg-primary hover:bg-primary/90">
                 Log In
@@ -91,98 +114,89 @@ const Wishlist = () => {
     <div className="min-h-screen bg-background py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <Link to="/shop" className="inline-flex items-center text-muted-foreground hover:text-primary mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Continue Shopping
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">My Wishlist</h1>
-            <p className="text-muted-foreground">
-              {wishlistItems.length} {wishlistItems.length === 1 ? 'item' : 'items'} saved
-            </p>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Link to="/shop">
+              <Button variant="ghost" size="sm" className="gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                Back to Shop
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">My Wishlist</h1>
+              <p className="text-muted-foreground">
+                {wishlistItems.length} {wishlistItems.length === 1 ? 'item' : 'items'} saved
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Wishlist Items */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {wishlistItems.map((item: any) => (
-            <Card key={item._id || item.id} className="group overflow-hidden hover:shadow-hover transition-all duration-300">
-              <div className="relative">
-                {/* Product Image */}
-                <div className="aspect-square overflow-hidden bg-muted/30">
-                  <img
-                    src={item.product?.images?.[0]?.url || item.product?.image || '/placeholder-product.jpg'}
-                    alt={item.product?.name || 'Product'}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
-
-                {/* Remove Button */}
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="absolute top-3 right-3 w-8 h-8 bg-background/80 backdrop-blur-sm hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  onClick={() => handleRemoveFromWishlist(item.product?._id || item.product?.id || item._id)}
-                >
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
-              </div>
-
-              <CardContent className="p-4">
-                <Link to={`/product/${item.product?._id || item.product?.id}`} className="block group">
-                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors duration-200 line-clamp-2 mb-2">
-                    {item.product?.name || 'Unknown Product'}
-                  </h3>
-                </Link>
-
-                <Badge variant="secondary" className="mb-3">
-                  {item.product?.category || 'N/A'}
-                </Badge>
-
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-lg font-bold text-foreground">
-                    ₹{(item.product?.price || item.price || 0).toLocaleString()}
-                  </span>
-                </div>
-
-                <div className="space-y-2">
-                  <Button
-                    onClick={() => handleAddToCart(item)}
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                    size="sm"
-                  >
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    Add to Cart
-                  </Button>
+          {wishlistItems.map((item: any) => {
+            const product = item.product || item;
+            const productId = product._id || product.id;
+            
+            return (
+              <Card key={productId} className="group hover:shadow-lg transition-shadow duration-300">
+                <div className="relative">
+                  <div className="aspect-square overflow-hidden">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
                   
+                  {/* Remove from wishlist button */}
                   <Button
-                    onClick={() => handleRemoveFromWishlist(item.product?._id || item.product?.id || item._id)}
-                    variant="outline"
-                    className="w-full text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
-                    size="sm"
+                    size="icon"
+                    variant="ghost"
+                    className="absolute top-2 right-2 w-8 h-8 bg-background/80 backdrop-blur-sm hover:bg-background"
+                    onClick={() => handleRemoveFromWishlist(productId)}
                   >
-                    <Heart className="w-4 h-4 mr-2 fill-current" />
-                    Remove
+                    <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
 
-        {/* Actions */}
-        <div className="mt-12 text-center">
-          <Link to="/shop">
-            <Button variant="outline" size="lg" className="mr-4">
-              Continue Shopping
-            </Button>
-          </Link>
-          <Link to="/cart">
-            <Button size="lg" className="bg-primary hover:bg-primary/90">
-              View Cart
-            </Button>
-          </Link>
+                <CardContent className="p-4">
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-foreground line-clamp-2">
+                      {product.name}
+                    </h3>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold text-foreground">
+                        ₹{product.price?.toLocaleString() || 'N/A'}
+                      </span>
+                      {product.originalPrice && (
+                        <span className="text-sm text-muted-foreground line-through">
+                          ₹{product.originalPrice.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className="flex-1 bg-primary hover:bg-primary/90"
+                        onClick={() => handleAddToCart(item)}
+                      >
+                        <ShoppingCart className="w-4 h-4 mr-2" />
+                        Add to Cart
+                      </Button>
+                      
+                      <Link to={`/product/${productId}`}>
+                        <Button size="sm" variant="outline" className="px-3">
+                          View
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -36,6 +36,9 @@ import PressDetail from "./pages/PressDetail";
 import NewsDetail from "./pages/NewsDetail";
 import NotFound from "./pages/NotFound";
 import Category from "./pages/Category";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
 
 const queryClient = new QueryClient();
 
@@ -76,6 +79,9 @@ const App = () => (
                 <Route path="/news/:id" element={<NewsDetail />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/category/:categoryId" element={<Category />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <ScrollToTop />

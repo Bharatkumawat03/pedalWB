@@ -14,7 +14,8 @@ import {
   Heart, 
   User, 
   Menu,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
 
 const Header = () => {
@@ -29,6 +30,11 @@ const Header = () => {
   const user = auth?.user;
   const cartItemCount = cartItems.reduce((total, item) => total + (item.quantity || 0), 0);
   const wishlistCount = wishlistItems.length;
+
+  const handleLogout = () => {
+    dispatch(logoutUser());
+    setIsMenuOpen(false);
+  };
 
   const navigation = [
     { name: 'Home', href: '/' },
@@ -49,7 +55,9 @@ const Header = () => {
               📞 +91 123 456 7890 | support@pedalbharat.com
             </div>
             <div className="hidden md:flex items-center space-x-4 text-muted-foreground">
-              <span>Free shipping on orders over ₹2000</span>
+              <span>Free shipping on orders above ₹5,000</span>
+              <span>•</span>
+              <span>30-day returns</span>
             </div>
           </div>
         </div>
@@ -59,13 +67,9 @@ const Header = () => {
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3">
-            <img 
-              src={pedalBharatLogo} 
-              alt="PedalBharat Logo" 
-              className="w-10 h-10 rounded-full"
-            />
-            <span className="text-xl font-bold text-foreground">PedalBharat</span>
+          <Link to="/" className="flex items-center space-x-2">
+            <img src={pedalBharatLogo} alt="PedalBharat" className="h-8 w-auto" />
+            <span className="text-xl font-bold text-foreground hidden sm:block">PedalBharat</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -136,12 +140,38 @@ const Header = () => {
               </Button>
             </Link>
 
-            {/* User Account */}
-            <Link to="/account">
-              <Button variant="ghost" size="icon">
-                <User className="w-5 h-5" />
-              </Button>
-            </Link>
+            {/* User Account / Auth */}
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-2">
+                <Link to="/account">
+                  <Button variant="ghost" size="icon" title={`Welcome, ${user?.firstName || 'User'}`}>
+                    <User className="w-5 h-5" />
+                  </Button>
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleLogout}
+                  title="Logout"
+                  className="hidden sm:flex"
+                >
+                  <LogOut className="w-5 h-5" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Link to="/login">
+                  <Button variant="ghost" size="sm">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link to="/signup">
+                  <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                    Sign Up
+                  </Button>
+                </Link>
+              </div>
+            )}
 
             {/* Mobile Menu Toggle */}
             <Button
@@ -170,6 +200,46 @@ const Header = () => {
                 {item.name}
               </Link>
             ))}
+            
+            {/* Mobile Auth Section */}
+            {isAuthenticated ? (
+              <div className="border-t border-border pt-2 mt-2">
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  Welcome, {user?.firstName || 'User'}
+                </div>
+                <Link
+                  to="/account"
+                  className="block px-3 py-2 text-foreground hover:text-primary hover:bg-muted/50 rounded-md transition-colors duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  My Account
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left px-3 py-2 text-foreground hover:text-primary hover:bg-muted/50 rounded-md transition-colors duration-200"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <div className="border-t border-border pt-2 mt-2 space-y-2">
+                <Link
+                  to="/login"
+                  className="block px-3 py-2 text-foreground hover:text-primary hover:bg-muted/50 rounded-md transition-colors duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/signup"
+                  className="block px-3 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md transition-colors duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
+            
             <div className="px-3 py-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />

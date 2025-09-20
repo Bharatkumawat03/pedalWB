@@ -1,7 +1,6 @@
-import { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/store/store';
-import { fetchWishlist, removeFromWishlist, toggleWishlist } from '@/store/slices/wishlistSlice';
+import { removeFromWishlist } from '@/store/slices/wishlistSlice';
 import { addToCart } from '@/store/slices/cartSlice';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,89 +14,30 @@ const Wishlist = () => {
   // Safe access to wishlist state with fallbacks
   const wishlistState = useSelector((state: RootState) => state.wishlist);
   const wishlistItems = wishlistState?.items || [];
-  const isLoading = wishlistState?.isLoading || false;
-  const error = wishlistState?.error || null;
   
-  const auth = useSelector((state: RootState) => state.auth);
-  const isAuthenticated = auth?.isAuthenticated || false;
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      dispatch(fetchWishlist());
-    }
-  }, [dispatch, isAuthenticated]);
-
   const handleRemoveFromWishlist = (productId: string) => {
     dispatch(removeFromWishlist(productId));
   };
 
   const handleAddToCart = (item: any) => {
     dispatch(addToCart({
-      productId: item.product?._id || item.product?.id || item._id,
-      quantity: 1,
-      selectedColor: undefined,
-      selectedSize: undefined
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      image: item.image,
+      category: item.category
     }));
   };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading your wishlist...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-destructive mb-4">
-            <Heart className="w-16 h-16 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Error Loading Wishlist</h2>
-            <p className="text-muted-foreground">{error}</p>
-          </div>
-          <Button onClick={() => dispatch(fetchWishlist())} variant="outline">
-            Try Again
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Heart className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
-          <h1 className="text-3xl font-bold text-foreground mb-4">Please Log In</h1>
-          <p className="text-muted-foreground mb-8">
-            You need to be logged in to view your wishlist.
-          </p>
-          <div className="flex gap-4 justify-center">
-            <Link to="/login">
-              <Button size="lg" className="bg-primary hover:bg-primary/90">
-                Log In
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (wishlistItems.length === 0) {
     return (
       <div className="min-h-screen bg-background py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <Heart className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
             <h1 className="text-3xl font-bold text-foreground mb-4">Your Wishlist is Empty</h1>
             <p className="text-muted-foreground mb-8">
-              Save your favorite items here for easy access later.
+              Looks like you haven't added any items to your wishlist yet.
             </p>
             <Link to="/shop">
               <Button size="lg" className="bg-primary hover:bg-primary/90">
@@ -112,20 +52,18 @@ const Wishlist = () => {
 
   return (
     <div className="min-h-screen bg-background py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Link to="/shop">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <ArrowLeft className="w-4 h-4" />
-                Back to Shop
-              </Button>
-            </Link>
+        <div className="mb-8">
+          <Link to="/shop" className="inline-flex items-center text-muted-foreground hover:text-primary mb-4">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Continue Shopping
+          </Link>
+          <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground">My Wishlist</h1>
               <p className="text-muted-foreground">
-                {wishlistItems.length} {wishlistItems.length === 1 ? 'item' : 'items'} saved
+                {wishlistItems.length} {wishlistItems.length === 1 ? 'item' : 'items'} in your wishlist
               </p>
             </div>
           </div>
@@ -133,70 +71,84 @@ const Wishlist = () => {
 
         {/* Wishlist Items */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {wishlistItems.map((item: any) => {
-            const product = item.product || item;
-            const productId = product._id || product.id;
-            
-            return (
-              <Card key={productId} className="group hover:shadow-lg transition-shadow duration-300">
-                <div className="relative">
-                  <div className="aspect-square overflow-hidden">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  
-                  {/* Remove from wishlist button */}
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="absolute top-2 right-2 w-8 h-8 bg-background/80 backdrop-blur-sm hover:bg-background"
-                    onClick={() => handleRemoveFromWishlist(productId)}
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
+          {wishlistItems.map((item) => (
+            <Card key={item.id} className="group hover:shadow-lg transition-shadow overflow-hidden">
+              <div className="relative">
+                {/* Product Image */}
+                <div className="aspect-square overflow-hidden bg-muted/30">
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
                 </div>
 
-                <CardContent className="p-4">
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-foreground line-clamp-2">
-                      {product.name}
-                    </h3>
-                    
-                    <div className="flex items-center justify-between">
-                      <span className="text-lg font-bold text-foreground">
-                        ₹{product.price?.toLocaleString() || 'N/A'}
-                      </span>
-                      {product.originalPrice && (
-                        <span className="text-sm text-muted-foreground line-through">
-                          ₹{product.originalPrice.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
+                {/* Remove from Wishlist Button */}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="absolute top-2 right-2 w-8 h-8 bg-background/80 backdrop-blur-sm hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => handleRemoveFromWishlist(item.id)}
+                >
+                  <Heart className="w-4 h-4 fill-primary text-primary" />
+                </Button>
 
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        className="flex-1 bg-primary hover:bg-primary/90"
-                        onClick={() => handleAddToCart(item)}
-                      >
-                        <ShoppingCart className="w-4 h-4 mr-2" />
-                        Add to Cart
-                      </Button>
-                      
-                      <Link to={`/product/${productId}`}>
-                        <Button size="sm" variant="outline" className="px-3">
-                          View
-                        </Button>
-                      </Link>
-                    </div>
+                {/* Quick Add to Cart */}
+                <div className="absolute bottom-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    onClick={() => handleAddToCart(item)}
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                    size="sm"
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    Add to Cart
+                  </Button>
+                </div>
+              </div>
+
+              <CardContent className="p-4">
+                <Link to={`/product/${item.id}`} className="block group">
+                  {/* Category Badge */}
+                  <Badge variant="secondary" className="mb-2">
+                    {item.category}
+                  </Badge>
+                  
+                  {/* Product Name */}
+                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors mb-2 line-clamp-2">
+                    {item.name}
+                  </h3>
+
+                  {/* Price */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-bold text-foreground">
+                      ₹{item.price.toLocaleString()}
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                </Link>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 mt-4">
+                  <Button
+                    onClick={() => handleAddToCart(item)}
+                    className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    size="sm"
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    Add to Cart
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleRemoveFromWishlist(item.id)}
+                    className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     </div>

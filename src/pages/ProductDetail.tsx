@@ -277,6 +277,7 @@ const ProductDetail = () => {
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
+  // Fix stock checking to handle both backend and frontend structures
   const isOutOfStock = !product.inStock || (product.stock !== undefined && product.stock <= 0);
 
   // Safely extract rating values

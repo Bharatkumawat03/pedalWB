@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/store/store';
 import { setSearch } from '@/store/slices/filtersSlice';
-import { logoutUser } from '@/store/slices/authSlice';
 import pedalBharatLogo from '@/assets/pedalbharat-logo.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,8 +13,7 @@ import {
   Heart, 
   User, 
   Menu,
-  X,
-  LogOut
+  X
 } from 'lucide-react';
 
 const Header = () => {
@@ -33,11 +31,6 @@ const Header = () => {
   
   const cartItemCount = cartItems.reduce((total, item) => total + (item.quantity || 0), 0);
   const wishlistCount = wishlistItems.length;
-
-  const handleLogout = () => {
-    dispatch(logoutUser());
-    setIsMenuOpen(false);
-  };
 
   const navigation = [
     { name: 'Home', href: '/' },
@@ -144,26 +137,11 @@ const Header = () => {
             </Link>
 
             {/* Profile Icon - Always visible */}
-            <div className="flex items-center space-x-2">
-              <Link to="/account">
-                <Button variant="ghost" size="icon" title={isAuthenticated ? `Welcome, ${user?.firstName || 'User'}` : 'Sign in to your account'}>
-                  <User className="w-5 h-5" />
-                </Button>
-              </Link>
-              
-              {/* Logout button - Only show if authenticated */}
-              {isAuthenticated && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleLogout}
-                  title="Logout"
-                  className="hidden sm:flex"
-                >
-                  <LogOut className="w-5 h-5" />
-                </Button>
-              )}
-            </div>
+            <Link to="/account">
+              <Button variant="ghost" size="icon" title={isAuthenticated ? `Welcome, ${user?.firstName || 'User'}` : 'Sign in to your account'}>
+                <User className="w-5 h-5" />
+              </Button>
+            </Link>
 
             {/* Mobile Menu Toggle */}
             <Button
@@ -206,12 +184,6 @@ const Header = () => {
                 >
                   My Account
                 </Link>
-                <button
-                  onClick={handleLogout}
-                  className="block w-full text-left px-3 py-2 text-foreground hover:text-primary hover:bg-muted/50 rounded-md transition-colors duration-200"
-                >
-                  Logout
-                </button>
               </div>
             ) : (
               <div className="border-t border-border pt-2 mt-2">

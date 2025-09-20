@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import ProductCard from '@/components/product/ProductCard';
 import productService from '@/services/productService';
+import { products } from '@/data/products';
 import { ArrowRight, TrendingUp, Loader2 } from 'lucide-react';
 
 const FeaturedProducts = () => {
@@ -20,8 +21,9 @@ const FeaturedProducts = () => {
       } catch (err: any) {
         console.error('Error fetching featured products:', err);
         setError(err.message);
-        // Fallback to empty array if API fails
-        setFeaturedProducts([]);
+        // Fallback to static data if API fails
+        const staticFeaturedProducts = products.filter(product => product.isFeatured);
+        setFeaturedProducts(staticFeaturedProducts);
       } finally {
         setLoading(false);
       }
@@ -38,64 +40,79 @@ const FeaturedProducts = () => {
           <div>
             <div className="flex items-center gap-3 mb-4">
               <TrendingUp className="w-6 h-6 text-primary" />
-              <Badge className="bg-primary/10 text-primary border-primary/20">
-                Trending Now
+              <Badge variant="secondary" className="bg-primary/10 text-primary">
+                Featured Collection
               </Badge>
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Featured Products
+              Top Picks for Cyclists
             </h2>
-            <p className="text-xl text-muted-foreground">
-              Handpicked gear that's making waves in the cycling community
+            <p className="text-muted-foreground text-lg max-w-2xl">
+              Handpicked products that deliver exceptional performance and reliability. 
+              Trusted by professionals and enthusiasts worldwide.
             </p>
           </div>
           
           <Link to="/shop" className="hidden md:block">
-            <Button variant="outline" className="border-border hover:border-primary hover:bg-primary/5">
+            <Button variant="outline" className="group">
               View All Products
-              <ArrowRight className="ml-2 w-4 h-4" />
+              <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>
         </div>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <span className="ml-2 text-muted-foreground">Loading featured products...</span>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && featuredProducts.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-muted-foreground">Unable to load featured products. Please try again later.</p>
+          </div>
+        )}
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-          {loading ? (
-            // Loading skeleton
-            Array.from({ length: 8 }).map((_, index) => (
-              <div key={index} className="bg-card rounded-lg p-6 animate-pulse">
-                <div className="bg-muted h-48 rounded-md mb-4"></div>
-                <div className="bg-muted h-4 rounded mb-2"></div>
-                <div className="bg-muted h-4 rounded w-3/4 mb-2"></div>
-                <div className="bg-muted h-6 rounded w-1/2"></div>
-              </div>
-            ))
-          ) : error ? (
-            <div className="col-span-full text-center py-12">
-              <p className="text-muted-foreground mb-4">Unable to load featured products</p>
-              <Button onClick={() => window.location.reload()} variant="outline">
-                Try Again
-              </Button>
-            </div>
-          ) : featuredProducts.length === 0 ? (
-            <div className="col-span-full text-center py-12">
-              <p className="text-muted-foreground">No featured products available</p>
-            </div>
-          ) : (
-            featuredProducts.map((product) => (
-              <ProductCard key={product._id || product.id} product={product} />
-            ))
-          )}
-        </div>
+        {!loading && featuredProducts.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
+            {featuredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
 
-        {/* Mobile View All Button */}
+        {/* Mobile CTA */}
         <div className="text-center md:hidden">
           <Link to="/shop">
-            <Button variant="outline" className="border-border hover:border-primary hover:bg-primary/5 px-8">
+            <Button className="group">
               View All Products
-              <ArrowRight className="ml-2 w-4 h-4" />
+              <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>
+        </div>
+
+        {/* Trust Indicators */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-12 border-t border-border">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-primary mb-1">2000+</div>
+            <div className="text-sm text-muted-foreground">Products Available</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-primary mb-1">50K+</div>
+            <div className="text-sm text-muted-foreground">Happy Customers</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-primary mb-1">24/7</div>
+            <div className="text-sm text-muted-foreground">Customer Support</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-primary mb-1">Free</div>
+            <div className="text-sm text-muted-foreground">Shipping ₹2000+</div>
+          </div>
         </div>
       </div>
     </section>

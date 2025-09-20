@@ -1,6 +1,14 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { wishlistService, type WishlistItem } from '../../services';
 
+export interface WishlistItem {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  category: string;
+}
+
 interface WishlistState {
   items: WishlistItem[];
   isLoading: boolean;
@@ -13,7 +21,7 @@ const initialState: WishlistState = {
   error: null,
 };
 
-// Async thunks
+// Async thunks for API integration
 export const fetchWishlist = createAsyncThunk(
   'wishlist/fetchWishlist',
   async (_, { rejectWithValue }) => {
@@ -26,8 +34,8 @@ export const fetchWishlist = createAsyncThunk(
   }
 );
 
-export const addToWishlist = createAsyncThunk(
-  'wishlist/addToWishlist',
+export const addToWishlistAsync = createAsyncThunk(
+  'wishlist/addToWishlistAsync',
   async (productId: string, { rejectWithValue }) => {
     try {
       await wishlistService.addToWishlist(productId);
@@ -40,8 +48,8 @@ export const addToWishlist = createAsyncThunk(
   }
 );
 
-export const removeFromWishlist = createAsyncThunk(
-  'wishlist/removeFromWishlist',
+export const removeFromWishlistAsync = createAsyncThunk(
+  'wishlist/removeFromWishlistAsync',
   async (productId: string, { rejectWithValue }) => {
     try {
       await wishlistService.removeFromWishlist(productId);
@@ -54,8 +62,8 @@ export const removeFromWishlist = createAsyncThunk(
   }
 );
 
-export const toggleWishlist = createAsyncThunk(
-  'wishlist/toggleWishlist',
+export const toggleWishlistAsync = createAsyncThunk(
+  'wishlist/toggleWishlistAsync',
   async (productId: string, { rejectWithValue }) => {
     try {
       const response = await wishlistService.toggleWishlist(productId);
@@ -66,8 +74,8 @@ export const toggleWishlist = createAsyncThunk(
   }
 );
 
-export const clearWishlist = createAsyncThunk(
-  'wishlist/clearWishlist',
+export const clearWishlistAsync = createAsyncThunk(
+  'wishlist/clearWishlistAsync',
   async (_, { rejectWithValue }) => {
     try {
       await wishlistService.clearWishlist();
@@ -106,6 +114,27 @@ const wishlistSlice = createSlice({
   name: 'wishlist',
   initialState,
   reducers: {
+    // Synchronous reducers for local state management
+    addToWishlist: (state, action: PayloadAction<WishlistItem>) => {
+      const exists = state.items.find(item => item.id === action.payload.id);
+      if (!exists) {
+        state.items.push(action.payload);
+      }
+    },
+    removeFromWishlist: (state, action: PayloadAction<string>) => {
+      state.items = state.items.filter(item => item.id !== action.payload);
+    },
+    toggleWishlist: (state, action: PayloadAction<WishlistItem>) => {
+      const exists = state.items.find(item => item.id === action.payload.id);
+      if (exists) {
+        state.items = state.items.filter(item => item.id !== action.payload.id);
+      } else {
+        state.items.push(action.payload);
+      }
+    },
+    clearWishlist: (state) => {
+      state.items = [];
+    },
     clearError: (state) => {
       state.error = null;
     },
@@ -125,23 +154,23 @@ const wishlistSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      // Add to wishlist
-      .addCase(addToWishlist.fulfilled, (state, action) => {
+      // Add to wishlist async
+      .addCase(addToWishlistAsync.fulfilled, (state, action) => {
         state.items = action.payload;
       })
-      .addCase(addToWishlist.rejected, (state, action) => {
+      .addCase(addToWishlistAsync.rejected, (state, action) => {
         state.error = action.payload as string;
       })
-      // Remove from wishlist
-      .addCase(removeFromWishlist.fulfilled, (state, action) => {
+      // Remove from wishlist async
+      .addCase(removeFromWishlistAsync.fulfilled, (state, action) => {
         state.items = action.payload;
       })
-      // Toggle wishlist
-      .addCase(toggleWishlist.fulfilled, (state, action) => {
+      // Toggle wishlist async
+      .addCase(toggleWishlistAsync.fulfilled, (state, action) => {
         state.items = action.payload;
       })
-      // Clear wishlist
-      .addCase(clearWishlist.fulfilled, (state) => {
+      // Clear wishlist async
+      .addCase(clearWishlistAsync.fulfilled, (state) => {
         state.items = [];
       })
       // Move to cart
@@ -151,5 +180,6 @@ const wishlistSlice = createSlice({
   },
 });
 
-export const { clearError } = wishlistSlice.actions;
+export const { addToWishlist, removeFromWishlist, toggleWishlist, clearWishlist, clearError } = wishlistSlice.actions;
+
 export default wishlistSlice.reducer;

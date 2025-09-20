@@ -51,7 +51,7 @@ const Account = () => {
         setError(null);
         
         // Load user profile
-        const profileResponse = await userService.getProfile();
+        const profileResponse = await userService.getUserProfile();
         setUserProfile(profileResponse.data);
         
         // Load user orders
@@ -60,7 +60,7 @@ const Account = () => {
         
         // Load user addresses
         const addressesResponse = await userService.getAddresses();
-        setAddresses(addressesResponse.data || []);
+        setAddresses(addressesResponse || []);
         
       } catch (err: any) {
         console.error('Error loading user data:', err);
@@ -79,7 +79,7 @@ const Account = () => {
 
   const handleUpdateProfile = async (formData: any) => {
     try {
-      const response = await userService.updateProfile(formData);
+      const response = await userService.updateUserProfile(formData);
       setUserProfile(response.data);
     } catch (err: any) {
       console.error('Error updating profile:', err);
@@ -101,7 +101,7 @@ const Account = () => {
     try {
       const response = await userService.updateAddress(addressId, addressData);
       setAddresses(addresses.map(addr => 
-        addr.id === addressId ? response.data : addr
+        addr._id === addressId ? response.data : addr
       ));
     } catch (err: any) {
       console.error('Error updating address:', err);
@@ -112,7 +112,7 @@ const Account = () => {
   const handleDeleteAddress = async (addressId: string) => {
     try {
       await userService.deleteAddress(addressId);
-      setAddresses(addresses.filter(addr => addr.id !== addressId));
+      setAddresses(addresses.filter(addr => addr._id !== addressId));
     } catch (err: any) {
       console.error('Error deleting address:', err);
       setError(err.message || 'Failed to delete address');
@@ -419,13 +419,16 @@ const Account = () => {
                       <Button onClick={() => {
                         // Add new address functionality
                         const newAddress = {
-                          type: 'Home',
-                          name: userProfile?.firstName || user?.firstName || 'User',
-                          address: '',
+                          type: 'home',
+                          firstName: userProfile?.firstName || user?.firstName || 'User',
+                          lastName: userProfile?.lastName || user?.lastName || '',
+                          addressLine1: '',
                           city: '',
                           state: '',
-                          pincode: '',
-                          phone: userProfile?.phone || user?.phone || ''
+                          postalCode: '',
+                          country: 'India',
+                          phone: userProfile?.phone || user?.phone || '',
+                          isDefault: false
                         };
                         handleAddAddress(newAddress);
                       }}>
@@ -451,17 +454,20 @@ const Account = () => {
                                     <Badge variant="default">Default</Badge>
                                   )}
                                 </div>
-                                <p className="text-foreground">{address.name || address.fullName}</p>
-                                <p className="text-muted-foreground">{address.address}</p>
-                                <p className="text-muted-foreground">{address.city}, {address.state} - {address.pincode}</p>
+                                <p className="text-foreground">{address.firstName} {address.lastName}</p>
+                                <p className="text-muted-foreground">{address.addressLine1}</p>
+                                {address.addressLine2 && (
+                                  <p className="text-muted-foreground">{address.addressLine2}</p>
+                                )}
+                                <p className="text-muted-foreground">{address.city}, {address.state} - {address.postalCode}</p>
                                 <p className="text-muted-foreground">{address.phone}</p>
                               </div>
                               <div className="flex gap-2">
                                 <Button variant="outline" size="sm" onClick={() => {
                                   // Edit address functionality
-                                  const updatedData = prompt('Enter new address:', address.address);
+                                  const updatedData = prompt('Enter new address:', address.addressLine1);
                                   if (updatedData) {
-                                    handleUpdateAddress(address._id || address.id, { ...address, address: updatedData });
+                                    handleUpdateAddress(address._id || address.id, { ...address, addressLine1: updatedData });
                                   }
                                 }}>
                                   Edit

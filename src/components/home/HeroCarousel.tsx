@@ -173,9 +173,10 @@ const HeroCarousel = () => {
 
                     {/* Hero Features */}
                     <div className="relative lg:block hidden">
-                      <div className="absolute inset-0 bg-gradient-card rounded-2xl transform rotate-3 animate-glow" />
-                      <div className="relative bg-card border border-border rounded-2xl p-8 space-y-6 shadow-card">
-                        <h3 className="text-2xl font-bold text-foreground mb-6">Why Choose PedalWare?</h3>
+                      <div className="absolute inset-0 bg-gradient-card rounded-2xl transform rotate-6 animate-glow opacity-60" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent rounded-2xl transform -rotate-3" />
+                      <div className="relative bg-card/90 backdrop-blur-sm border border-border rounded-2xl p-8 space-y-6 shadow-card transform rotate-2 hover:rotate-0 transition-transform duration-500">
+                        <h3 className="text-2xl font-bold text-foreground mb-6">Why Choose PedalBharat?</h3>
                         
                         <div className="space-y-4">
                           {slide.features.map((feature, index) => (

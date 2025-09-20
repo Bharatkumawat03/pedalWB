@@ -20,19 +20,21 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
   const dispatch = useDispatch<AppDispatch>();
   const [isHovered, setIsHovered] = useState(false);
   
+  // Safely access wishlist state with fallback
+  const wishlistState = useSelector((state: RootState) => state.wishlist);
+  const wishlistItems = wishlistState?.items || [];
+  
   // Handle both backend and frontend wishlist structures
-  const isInWishlist = useSelector((state: RootState) =>
-    state.wishlist.items.some(item => 
-      item.product?._id === (product._id || product.id) || 
-      item.id === (product._id || product.id)
-    )
+  const isInWishlist = wishlistItems.some((item: any) => 
+    item.product?._id === (product._id || product.id) || 
+    item.id === (product._id || product.id)
   );
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     const productId = product._id || product.id;
     if (productId) {
-      // Try backend API approach first, fallback to frontend approach
+      // Use the async thunk for adding to cart
       dispatch(addToCart({ productId, quantity: 1 }));
     }
   };

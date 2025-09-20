@@ -15,6 +15,10 @@ const Wishlist = () => {
   const wishlistState = useSelector((state: RootState) => state.wishlist);
   const wishlistItems = wishlistState?.items || [];
   
+  // Check authentication
+  const auth = useSelector((state: RootState) => state.auth);
+  const isAuthenticated = auth?.isAuthenticated || false;
+  
   const handleRemoveFromWishlist = (productId: string) => {
     dispatch(removeFromWishlist(productId));
   };
@@ -28,6 +32,35 @@ const Wishlist = () => {
       category: item.category
     }));
   };
+
+  // Show login prompt if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background py-12">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <Heart className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
+            <h1 className="text-3xl font-bold text-foreground mb-4">Sign In Required</h1>
+            <p className="text-muted-foreground mb-8">
+              Please sign in to view and manage your wishlist.
+            </p>
+            <div className="flex gap-4 justify-center">
+              <Link to="/login">
+                <Button size="lg" className="bg-primary hover:bg-primary/90">
+                  Sign In
+                </Button>
+              </Link>
+              <Link to="/shop">
+                <Button size="lg" variant="outline">
+                  Continue Shopping
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (wishlistItems.length === 0) {
     return (

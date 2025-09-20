@@ -119,7 +119,7 @@ const Header = () => {
               <Search className="w-5 h-5" />
             </Button>
 
-            {/* Wishlist */}
+            {/* Wishlist - Always visible but will redirect to login if not authenticated */}
             <Link to="/wishlist">
               <Button variant="ghost" size="icon" className="relative">
                 <Heart className="w-5 h-5" />
@@ -131,7 +131,7 @@ const Header = () => {
               </Button>
             </Link>
 
-            {/* Cart */}
+            {/* Cart - Always visible and works without authentication */}
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingCart className="w-5 h-5" />
@@ -143,14 +143,16 @@ const Header = () => {
               </Button>
             </Link>
 
-            {/* User Account / Auth */}
-            {isAuthenticated ? (
-              <div className="flex items-center space-x-2">
-                <Link to="/account">
-                  <Button variant="ghost" size="icon" title={`Welcome, ${user?.firstName || 'User'}`}>
-                    <User className="w-5 h-5" />
-                  </Button>
-                </Link>
+            {/* Profile Icon - Always visible */}
+            <div className="flex items-center space-x-2">
+              <Link to="/account">
+                <Button variant="ghost" size="icon" title={isAuthenticated ? `Welcome, ${user?.firstName || 'User'}` : 'Sign in to your account'}>
+                  <User className="w-5 h-5" />
+                </Button>
+              </Link>
+              
+              {/* Logout button - Only show if authenticated */}
+              {isAuthenticated && (
                 <Button
                   variant="ghost"
                   size="icon"
@@ -160,21 +162,8 @@ const Header = () => {
                 >
                   <LogOut className="w-5 h-5" />
                 </Button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <Link to="/login">
-                  <Button variant="ghost" size="sm">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link to="/signup">
-                  <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                    Sign Up
-                  </Button>
-                </Link>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Mobile Menu Toggle */}
             <Button
@@ -225,7 +214,10 @@ const Header = () => {
                 </button>
               </div>
             ) : (
-              <div className="border-t border-border pt-2 mt-2 space-y-2">
+              <div className="border-t border-border pt-2 mt-2">
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  Sign in to access your account and wishlist
+                </div>
                 <Link
                   to="/login"
                   className="block px-3 py-2 text-foreground hover:text-primary hover:bg-muted/50 rounded-md transition-colors duration-200"

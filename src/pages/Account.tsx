@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { Link } from 'react-router-dom';
 import { 
   User, 
   ShoppingBag, 
@@ -20,6 +23,39 @@ import {
 } from 'lucide-react';
 
 const Account = () => {
+  // Check authentication
+  const auth = useSelector((state: RootState) => state.auth);
+  const isAuthenticated = auth?.isAuthenticated || false;
+
+  // Show login prompt if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background py-12">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <User className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
+            <h1 className="text-3xl font-bold text-foreground mb-4">Sign In Required</h1>
+            <p className="text-muted-foreground mb-8">
+              Please sign in to view and manage your account.
+            </p>
+            <div className="flex gap-4 justify-center">
+              <Link to="/login">
+                <Button size="lg" className="bg-primary hover:bg-primary/90">
+                  Sign In
+                </Button>
+              </Link>
+              <Link to="/shop">
+                <Button size="lg" variant="outline">
+                  Continue Shopping
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const [user] = useState({
     name: 'Rajesh Kumar',
     email: 'rajesh.kumar@example.com',

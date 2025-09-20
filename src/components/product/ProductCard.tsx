@@ -53,6 +53,30 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
   // Handle both backend and frontend stock checking
   const isOutOfStock = !product.inStock || (product.stock !== undefined && product.stock <= 0);
 
+  // Safely extract rating values
+  const getRatingValue = () => {
+    if (typeof product.rating === 'number') {
+      return product.rating;
+    }
+    if (product.rating && typeof product.rating === 'object') {
+      return product.rating.average || product.rating.value || 0;
+    }
+    return product.averageRating || 0;
+  };
+
+  const getReviewCount = () => {
+    if (typeof product.reviews === 'number') {
+      return product.reviews;
+    }
+    if (product.rating && typeof product.rating === 'object') {
+      return product.rating.count || product.rating.reviews || 0;
+    }
+    return product.reviewCount || 0;
+  };
+
+  const ratingValue = getRatingValue();
+  const reviewCount = getReviewCount();
+
   return (
     <Card 
       className={`group bg-card border-border hover:border-primary/20 transition-all duration-300 hover:shadow-hover overflow-hidden ${className}`}
@@ -129,14 +153,14 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
             {product.name}
           </h3>
 
-          {/* Rating - Handle both backend and frontend rating structures */}
+          {/* Rating - Safely handle both backend and frontend rating structures */}
           <div className="flex items-center gap-1 mb-3">
             <div className="flex items-center">
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
                   className={`w-3 h-3 ${
-                    i < Math.floor(product.rating?.average || product.rating || 0)
+                    i < Math.floor(ratingValue)
                       ? 'text-yellow-400 fill-current'
                       : 'text-muted-foreground'
                   }`}
@@ -144,7 +168,7 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
               ))}
             </div>
             <span className="text-sm text-muted-foreground">
-              {product.rating?.average || product.averageRating || product.rating || 0} ({product.reviews || product.reviewCount || 0})
+              {ratingValue} ({reviewCount})
             </span>
           </div>
 

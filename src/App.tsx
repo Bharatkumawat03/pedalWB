@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/layout/Layout";
+import ScrollToTop from "./components/common/ScrollToTop";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
@@ -73,6 +74,7 @@ const App = () => (
               <Route path="/category/:categoryId" element={<Category />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <ScrollToTop />
           </Layout>
         </BrowserRouter>
       </TooltipProvider>

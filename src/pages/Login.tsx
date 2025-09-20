@@ -23,7 +23,12 @@ const Login = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { isLoading, error, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  
+  // Safely destructure auth state with fallbacks
+  const auth = useSelector((state: RootState) => state.auth);
+  const isLoading = auth?.isLoading || false;
+  const error = auth?.error || null;
+  const isAuthenticated = auth?.isAuthenticated || false;
 
   // Redirect if already authenticated
   if (isAuthenticated) {

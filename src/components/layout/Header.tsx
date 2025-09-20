@@ -21,13 +21,16 @@ import {
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
+  
+  // Safely destructure auth state with fallbacks
   const auth = useSelector((state: RootState) => state.auth);
+  const isAuthenticated = auth?.isAuthenticated || false;
+  const user = auth?.user;
+  
   const cartItems = useSelector((state: RootState) => state.cart.items || []);
   const wishlistItems = useSelector((state: RootState) => state.wishlist.items || []);
   const searchValue = useSelector((state: RootState) => state.filters.search);
   
-  const isAuthenticated = auth?.isAuthenticated || false;
-  const user = auth?.user;
   const cartItemCount = cartItems.reduce((total, item) => total + (item.quantity || 0), 0);
   const wishlistCount = wishlistItems.length;
 

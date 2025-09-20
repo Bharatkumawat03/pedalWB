@@ -43,7 +43,7 @@ const Header = () => {
     <header className="bg-background border-b border-border sticky top-0 z-50 backdrop-blur-md bg-background/95">
       {/* Top Bar */}
       <div className="border-b border-border/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className=" px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-10 text-sm">
             <div className="text-muted-foreground">
               📞 +91 123 456 7890 | support@pedalbharat.com
@@ -56,7 +56,7 @@ const Header = () => {
       </div>
 
       {/* Main Header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3">

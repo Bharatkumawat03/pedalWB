@@ -125,7 +125,7 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
                 <Star
                   key={i}
                   className={`w-3 h-3 ${
-                    i < Math.floor(product.rating)
+                    i < Math.floor(product.rating.average)
                       ? 'text-yellow-400 fill-current'
                       : 'text-muted-foreground'
                   }`}
@@ -133,7 +133,7 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
               ))}
             </div>
             <span className="text-sm text-muted-foreground">
-              {product.rating || product.averageRating || 0} ({product.reviews || product.reviewCount || 0})
+              {product.rating.average || product.averageRating || 0} ({product.reviews || product.reviewCount || 0})
             </span>
           </div>
 

@@ -38,7 +38,7 @@ const ProductDetail = () => {
         setLoading(true);
         setError(null);
         const response = await productService.getProduct(id);
-        setProduct(response.data.product);
+        setProduct(response.data);
         setRelatedProducts(response.data.relatedProducts || []);
       } catch (err: any) {
         console.error('Error fetching product:', err);
@@ -176,7 +176,7 @@ const ProductDetail = () => {
                       <Star
                         key={i}
                         className={`w-4 h-4 ${
-                          i < Math.floor(product.rating)
+                          i < Math.floor(product.rating.average)
                             ? 'text-yellow-400 fill-current'
                             : 'text-muted-foreground'
                         }`}
@@ -184,7 +184,7 @@ const ProductDetail = () => {
                     ))}
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {product.rating} ({product.reviews || product.reviewCount || 0} reviews)
+                    {product.rating.average} ({product.reviews || product.reviewCount || 0} reviews)
                   </span>
                 </div>
               )}

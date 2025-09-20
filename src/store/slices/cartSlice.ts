@@ -121,8 +121,9 @@ const cartSlice = createSlice({
       })
       .addCase(fetchCart.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.items = action.payload.items;
-        state.summary = action.payload.summary;
+        // Safe access to payload with fallbacks
+        state.items = action.payload?.items || [];
+        state.summary = action.payload?.summary || null;
       })
       .addCase(fetchCart.rejected, (state, action) => {
         state.isLoading = false;
@@ -134,8 +135,9 @@ const cartSlice = createSlice({
       })
       .addCase(addToCart.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.items = action.payload.items;
-        state.summary = action.payload.summary;
+        // Safe access to payload with fallbacks
+        state.items = action.payload?.items || [];
+        state.summary = action.payload?.summary || null;
       })
       .addCase(addToCart.rejected, (state, action) => {
         state.isLoading = false;
@@ -143,13 +145,15 @@ const cartSlice = createSlice({
       })
       // Update cart item
       .addCase(updateCartItem.fulfilled, (state, action) => {
-        state.items = action.payload.items;
-        state.summary = action.payload.summary;
+        // Safe access to payload with fallbacks
+        state.items = action.payload?.items || [];
+        state.summary = action.payload?.summary || null;
       })
       // Remove from cart
       .addCase(removeFromCart.fulfilled, (state, action) => {
-        state.items = action.payload.items;
-        state.summary = action.payload.summary;
+        // Safe access to payload with fallbacks
+        state.items = action.payload?.items || [];
+        state.summary = action.payload?.summary || null;
       })
       // Clear cart
       .addCase(clearCart.fulfilled, (state) => {

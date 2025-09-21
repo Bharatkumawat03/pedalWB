@@ -33,11 +33,11 @@ api.interceptors.response.use(
     return response.data;
   },
   (error) => {
-    // Handle common errors
+    // Handle common errors without redirecting
     if (error.response?.status === 401) {
-      // Clear token and redirect to login
+      // Just clear token, don't redirect
       localStorage.removeItem('token');
-      window.location.href = '/';
+      localStorage.removeItem('user');
     }
     
     const errorMessage = error.response?.data?.message || error.message || 'An error occurred';

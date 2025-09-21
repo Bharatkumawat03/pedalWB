@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import ProductCard from '@/components/product/ProductCard';
 import productService from '@/services/productService';
+import { products } from '@/data/products';
 import { ArrowRight, TrendingUp, Loader2 } from 'lucide-react';
 
 const FeaturedProducts = () => {
@@ -15,13 +16,15 @@ const FeaturedProducts = () => {
     const fetchFeaturedProducts = async () => {
       try {
         setLoading(true);
+        setError(null);
         const products = await productService.getFeaturedProducts(8);
-        setFeaturedProducts(products);
+        setFeaturedProducts(products || []);
       } catch (err: any) {
         console.error('Error fetching featured products:', err);
         setError(err.message);
-        // Fallback to empty array if API fails
-        setFeaturedProducts([]);
+        // Fallback to static data if API fails
+        const staticFeaturedProducts = products.filter(product => product.isFeatured);
+        setFeaturedProducts(staticFeaturedProducts || []);
       } finally {
         setLoading(false);
       }
@@ -30,73 +33,86 @@ const FeaturedProducts = () => {
     fetchFeaturedProducts();
   }, []);
 
+  // Ensure featuredProducts is always an array
+  const safeFeaturedProducts = Array.isArray(featuredProducts) ? featuredProducts : [];
+
   return (
     <section className="py-20 bg-muted/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="flex items-center justify-between mb-12">
           <div>
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="w-6 h-6 text-primary" />
-              <Badge className="bg-primary/10 text-primary border-primary/20">
-                Trending Now
+              <Badge variant="secondary" className="text-sm">
+                Featured
               </Badge>
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            <h2 className="text-4xl font-bold text-foreground mb-4">
               Featured Products
             </h2>
-            <p className="text-xl text-muted-foreground">
-              Handpicked gear that's making waves in the cycling community
+            <p className="text-lg text-muted-foreground max-w-2xl">
+              Discover our handpicked selection of premium cycling gear, 
+              carefully curated for the ultimate riding experience.
             </p>
           </div>
-          
-          <Link to="/shop" className="hidden md:block">
-            <Button variant="outline" className="border-border hover:border-primary hover:bg-primary/5">
+          <Link to="/shop">
+            <Button variant="outline" size="lg" className="gap-2 group">
               View All Products
-              <ArrowRight className="ml-2 w-4 h-4" />
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>
         </div>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+              <p className="text-muted-foreground">Loading featured products...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <div className="text-center py-20">
+            <div className="text-destructive mb-4">
+              <h3 className="text-xl font-semibold mb-2">Unable to Load Products</h3>
+              <p className="text-muted-foreground">Unable to load featured products. Please try again later.</p>
+            </div>
+          </div>
+        )}
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-          {loading ? (
-            // Loading skeleton
-            Array.from({ length: 8 }).map((_, index) => (
-              <div key={index} className="bg-card rounded-lg p-6 animate-pulse">
-                <div className="bg-muted h-48 rounded-md mb-4"></div>
-                <div className="bg-muted h-4 rounded mb-2"></div>
-                <div className="bg-muted h-4 rounded w-3/4 mb-2"></div>
-                <div className="bg-muted h-6 rounded w-1/2"></div>
-              </div>
-            ))
-          ) : error ? (
-            <div className="col-span-full text-center py-12">
-              <p className="text-muted-foreground mb-4">Unable to load featured products</p>
-              <Button onClick={() => window.location.reload()} variant="outline">
-                Try Again
-              </Button>
-            </div>
-          ) : featuredProducts.length === 0 ? (
-            <div className="col-span-full text-center py-12">
-              <p className="text-muted-foreground">No featured products available</p>
-            </div>
-          ) : (
-            featuredProducts.map((product) => (
-              <ProductCard key={product._id || product.id} product={product} />
-            ))
-          )}
-        </div>
+        {!loading && safeFeaturedProducts.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
+            {safeFeaturedProducts.map((product) => (
+              <ProductCard key={product.id || product._id} product={product} />
+            ))}
+          </div>
+        )}
 
-        {/* Mobile View All Button */}
-        <div className="text-center md:hidden">
-          <Link to="/shop">
-            <Button variant="outline" className="border-border hover:border-primary hover:bg-primary/5 px-8">
-              View All Products
-              <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
-          </Link>
-        </div>
+        {/* Empty State */}
+        {!loading && !error && safeFeaturedProducts.length === 0 && (
+          <div className="text-center py-20">
+            <div className="text-muted-foreground">
+              <h3 className="text-xl font-semibold mb-2">No Featured Products</h3>
+              <p className="text-muted-foreground">No featured products available at the moment.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Call to Action */}
+        {!loading && safeFeaturedProducts.length > 0 && (
+          <div className="text-center">
+            <Link to="/shop">
+              <Button size="lg" className="bg-primary hover:bg-primary/90">
+                Explore All Products
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

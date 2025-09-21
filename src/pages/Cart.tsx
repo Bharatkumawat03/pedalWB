@@ -1,7 +1,6 @@
-import { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState, AppDispatch } from '@/store/store';
-import { fetchCart, updateCartItem, removeFromCart, clearCart } from '@/store/slices/cartSlice';
+import { RootState } from '@/store/store';
+import { updateQuantity, removeFromCart, clearCart } from '@/store/slices/cartSlice';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,65 +9,25 @@ import { Link } from 'react-router-dom';
 import { ShoppingBag, Trash2, Plus, Minus, ArrowLeft } from 'lucide-react';
 
 const Cart = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { items, summary, isLoading, error } = useSelector((state: RootState) => state.cart);
-  const auth = useSelector((state: RootState) => state.auth);
-  const isAuthenticated = auth?.isAuthenticated || false;
+  const dispatch = useDispatch();
+  const { items, total, itemCount } = useSelector((state: RootState) => state.cart);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      dispatch(fetchCart());
-    }
-  }, [dispatch, isAuthenticated]);
-
-  const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
-    dispatch(updateCartItem({ itemId, quantity: newQuantity }));
+  const handleUpdateQuantity = (id: string, newQuantity: number) => {
+    dispatch(updateQuantity({ id, quantity: newQuantity }));
   };
 
-  const handleRemoveItem = (itemId: string) => {
-    dispatch(removeFromCart(itemId));
+  const handleRemoveItem = (id: string) => {
+    dispatch(removeFromCart(id));
   };
 
   const handleClearCart = () => {
     dispatch(clearCart());
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading cart...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <ShoppingBag className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
-            <h1 className="text-3xl font-bold text-foreground mb-4">Please Log In</h1>
-            <p className="text-muted-foreground mb-8">
-              You need to be logged in to view your cart.
-            </p>
-            <Link to="/login">
-              <Button size="lg" className="bg-primary hover:bg-primary/90">
-                Log In
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-background py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <ShoppingBag className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
             <h1 className="text-3xl font-bold text-foreground mb-4">Your Cart is Empty</h1>
@@ -88,7 +47,7 @@ const Cart = () => {
 
   return (
     <div className="min-h-screen bg-background py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <Link to="/shop" className="inline-flex items-center text-muted-foreground hover:text-primary mb-4">
@@ -99,7 +58,7 @@ const Cart = () => {
             <div>
               <h1 className="text-3xl font-bold text-foreground">Shopping Cart</h1>
               <p className="text-muted-foreground">
-                {items.length} {items.length === 1 ? 'item' : 'items'} in your cart
+                {itemCount} {itemCount === 1 ? 'item' : 'items'} in your cart
               </p>
             </div>
             <Button 
@@ -115,31 +74,31 @@ const Cart = () => {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
-            {items.map((item: any) => (
-              <Card key={item._id || item.id} className="overflow-hidden">
+            {items.map((item) => (
+              <Card key={item.id} className="overflow-hidden">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-6">
                     {/* Product Image */}
                     <div className="w-24 h-24 bg-muted/30 rounded-lg overflow-hidden flex-shrink-0">
                       <img
-                        src={item.product?.images?.[0]?.url || item.product?.image || '/placeholder-product.jpg'}
-                        alt={item.product?.name || 'Product'}
+                        src={item.image}
+                        alt={item.name}
                         className="w-full h-full object-cover"
                       />
                     </div>
 
                     {/* Product Info */}
                     <div className="flex-1">
-                      <Link to={`/product/${item.product?._id || item.product?.id}`} className="block group">
+                      <Link to={`/product/${item.id}`} className="block group">
                         <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors mb-1">
-                          {item.product?.name || 'Unknown Product'}
+                          {item.name}
                         </h3>
                       </Link>
                       <Badge variant="secondary" className="mb-2">
-                        {item.product?.category || 'N/A'}
+                        {item.category}
                       </Badge>
                       <p className="text-lg font-bold text-foreground">
-                        ₹{(item.product?.price || item.price || 0).toLocaleString()}
+                        ₹{item.price.toLocaleString()}
                       </p>
                     </div>
 
@@ -148,7 +107,7 @@ const Cart = () => {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => handleUpdateQuantity(item._id || item.id, item.quantity - 1)}
+                        onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                         disabled={item.quantity <= 1}
                         className="w-8 h-8"
                       >
@@ -160,7 +119,7 @@ const Cart = () => {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => handleUpdateQuantity(item._id || item.id, item.quantity + 1)}
+                        onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                         className="w-8 h-8"
                       >
                         <Plus className="w-3 h-3" />
@@ -170,12 +129,12 @@ const Cart = () => {
                     {/* Total Price */}
                     <div className="text-right">
                       <p className="text-lg font-bold text-foreground">
-                        ₹{((item.product?.price || item.price || 0) * item.quantity).toLocaleString()}
+                        ₹{(item.price * item.quantity).toLocaleString()}
                       </p>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleRemoveItem(item._id || item.id)}
+                        onClick={() => handleRemoveItem(item.id)}
                         className="text-destructive hover:text-destructive hover:bg-destructive/10 mt-2"
                       >
                         <Trash2 className="w-4 h-4 mr-1" />
@@ -229,8 +188,8 @@ const Cart = () => {
                   </div>
                 )}
 
-                <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" size="lg">
-                  Proceed to Checkout
+                <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" size="lg">
+                  <Link to="/checkout">Proceed to Checkout</Link>
                 </Button>
 
                 <div className="text-center">

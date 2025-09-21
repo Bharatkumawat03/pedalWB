@@ -3,14 +3,16 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/store/store';
 import { addToCart } from '@/store/slices/cartSlice';
 import { toggleWishlist } from '@/store/slices/wishlistSlice';
+import { Product } from '@/data/products';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Heart, ShoppingCart, Star, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+// Unified interface that works with both backend API and frontend data
 interface ProductCardProps {
-  product: any; // Backend product structure
+  product: any; // Flexible to handle both backend (_id) and frontend (id) structures
   className?: string;
 }
 
@@ -18,15 +20,26 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
   const dispatch = useDispatch<AppDispatch>();
   const [isHovered, setIsHovered] = useState(false);
   
-  const isInWishlist = useSelector((state: RootState) =>
-    state.wishlist.items.some(item => item.product?._id === (product._id || product.id))
+  // Safely access wishlist state with fallback
+  const wishlistState = useSelector((state: RootState) => state.wishlist);
+  const wishlistItems = wishlistState?.items || [];
+  
+  // Handle both backend and frontend wishlist structures
+  const isInWishlist = wishlistItems.some((item: any) => 
+    item.id === (product._id || product.id)
   );
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     const productId = product._id || product.id;
     if (productId) {
-      dispatch(addToCart({ productId, quantity: 1 }));
+      dispatch(addToCart({
+        id: productId,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        category: product.category || product.brand || 'General'
+      }));
     }
   };
 
@@ -34,13 +47,46 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
     e.preventDefault();
     const productId = product._id || product.id;
     if (productId) {
-      dispatch(toggleWishlist(productId));
+      dispatch(toggleWishlist({
+        id: productId,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        category: product.category || product.brand || 'General'
+      }));
     }
   };
 
   const discountPercentage = product.originalPrice 
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
+
+  // Handle both backend and frontend stock checking
+  const isOutOfStock = !product.inventory.inStock || (product.inventory.stock !== undefined && product.inventory.stock <= 0);
+
+  // Safely extract rating values
+  const getRatingValue = () => {
+    if (typeof product.rating === 'number') {
+      return product.rating;
+    }
+    if (product.rating && typeof product.rating === 'object') {
+      return product.rating.average || product.rating.value || 0;
+    }
+    return product.averageRating || 0;
+  };
+
+  const getReviewCount = () => {
+    if (typeof product.reviews === 'number') {
+      return product.reviews;
+    }
+    if (product.rating && typeof product.rating === 'object') {
+      return product.rating.count || product.rating.reviews || 0;
+    }
+    return product.reviewCount || 0;
+  };
+
+  const ratingValue = getRatingValue();
+  const reviewCount = getReviewCount();
 
   return (
     <Card 
@@ -66,7 +112,7 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
           {discountPercentage > 0 && (
             <Badge variant="destructive">-{discountPercentage}%</Badge>
           )}
-          {!product.inStock && product.stock <= 0 && (
+          {isOutOfStock && (
             <Badge variant="secondary">Out of Stock</Badge>
           )}
         </div>
@@ -98,7 +144,7 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
         <div className={`absolute bottom-3 left-3 right-3 transition-all duration-300 ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
           <Button
             onClick={handleAddToCart}
-            disabled={!product.inStock && product.stock <= 0}
+            disabled={isOutOfStock}
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
             size="sm"
           >
@@ -118,14 +164,14 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
             {product.name}
           </h3>
 
-          {/* Rating */}
+          {/* Rating - Safely handle both backend and frontend rating structures */}
           <div className="flex items-center gap-1 mb-3">
             <div className="flex items-center">
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
                   className={`w-3 h-3 ${
-                    i < Math.floor(product.rating.average)
+                    i < Math.floor(ratingValue)
                       ? 'text-yellow-400 fill-current'
                       : 'text-muted-foreground'
                   }`}
@@ -133,7 +179,7 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
               ))}
             </div>
             <span className="text-sm text-muted-foreground">
-              {product.rating.average || product.averageRating || 0} ({product.reviews || product.reviewCount || 0})
+              {ratingValue} ({reviewCount})
             </span>
           </div>
 

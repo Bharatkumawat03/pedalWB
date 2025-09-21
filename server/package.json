@@ -1,47 +1,13 @@
 {
-  "name": "cyclehub-backend",
+  "name": "pedalbharat-admin",
   "version": "1.0.0",
-  "description": "Cycle Hub Express Backend API",
-  "main": "dist/server.js",
-  "type": "commonjs",
+  "description": "PedalBharat Admin Panel",
   "scripts": {
-    "start": "node dist/server.js",
-    "dev": "nodemon --exec ts-node server.ts",
-    "build": "tsc",
-    "seed": "ts-node utils/seeder.ts",
-    "seed:delete": "ts-node utils/seeder.ts -d"
-  },
-  "dependencies": {
-    "@types/mongoose": "^5.11.96",
-    "bcryptjs": "^3.0.2",
-    "cloudinary": "^2.7.0",
-    "compression": "^1.8.1",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.2",
-    "express": "^5.1.0",
-    "express-rate-limit": "^8.1.0",
-    "helmet": "^8.1.0",
-    "joi": "^18.0.1",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.18.0",
-    "morgan": "^1.10.1",
-    "multer": "^2.0.2",
-    "nodemailer": "^7.0.6"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "install-all": "npm install && cd server && npm install && cd ../admin-panel && npm install"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
-    "@types/compression": "^1.8.1",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.3",
-    "@types/helmet": "^0.0.48",
-    "@types/joi": "^17.2.2",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/morgan": "^1.9.10",
-    "@types/multer": "^2.0.0",
-    "@types/node": "^24.3.1",
-    "@types/nodemailer": "^7.0.1",
-    "nodemon": "^3.1.10",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.2"
+    "concurrently": "^8.2.2"
   }
 }

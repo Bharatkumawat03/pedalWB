@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -81,12 +82,14 @@ const News = () => {
     return matchesCategory && matchesSearch;
   });
 
+  const getId = (article: typeof newsArticles[number]) => newsArticles.findIndex(a => a.title === article.title) + 1;
   const featuredArticle = newsArticles.find(article => article.featured);
+  const featuredId = featuredArticle ? getId(featuredArticle) : null;
   const regularArticles = filteredArticles.filter(article => !article.featured);
 
   return (
     <div className="min-h-screen bg-background py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="text-center mb-12">
           <Badge variant="outline" className="mb-4">Latest News</Badge>
@@ -132,44 +135,46 @@ const News = () => {
         {featuredArticle && selectedCategory === 'All' && (
           <div className="mb-16">
             <h2 className="text-2xl font-bold text-foreground mb-6">Featured Story</h2>
-            <Card className="overflow-hidden hover:shadow-hover transition-shadow duration-300">
-              <div className="grid lg:grid-cols-2 gap-0">
-                <div className="bg-muted/30 min-h-[300px] flex items-center justify-center">
-                  <img 
-                    src={featuredArticle.image} 
-                    alt={featuredArticle.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="p-8 flex flex-col justify-center">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <Badge variant="secondary">{featuredArticle.category}</Badge>
-                    <div className="flex items-center text-muted-foreground text-sm">
-                      <Calendar className="w-4 h-4 mr-1" />
-                      {featuredArticle.date}
+            <Link to={featuredId ? `/news/${featuredId}` : '/news'}>
+              <Card className="overflow-hidden hover:shadow-hover transition-shadow duration-300 cursor-pointer">
+                <div className="grid lg:grid-cols-2 gap-0">
+                  <div className="bg-muted/30 min-h-[300px] flex items-center justify-center">
+                    <img 
+                      src={featuredArticle.image} 
+                      alt={featuredArticle.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="p-8 flex flex-col justify-center">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <Badge variant="secondary">{featuredArticle.category}</Badge>
+                      <div className="flex items-center text-muted-foreground text-sm">
+                        <Calendar className="w-4 h-4 mr-1" />
+                        {featuredArticle.date}
+                      </div>
+                      <div className="flex items-center text-muted-foreground text-sm">
+                        <Clock className="w-4 h-4 mr-1" />
+                        {featuredArticle.readTime}
+                      </div>
                     </div>
-                    <div className="flex items-center text-muted-foreground text-sm">
-                      <Clock className="w-4 h-4 mr-1" />
-                      {featuredArticle.readTime}
+                    <h3 className="text-2xl font-bold text-foreground mb-4 hover:text-primary transition-colors">
+                      {featuredArticle.title}
+                    </h3>
+                    <p className="text-muted-foreground mb-6">{featuredArticle.summary}</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                        <User className="w-4 h-4" />
+                        <span>{featuredArticle.author}</span>
+                      </div>
+                      <Button>
+                        Read More
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
                     </div>
                   </div>
-                  <h3 className="text-2xl font-bold text-foreground mb-4 hover:text-primary transition-colors cursor-pointer">
-                    {featuredArticle.title}
-                  </h3>
-                  <p className="text-muted-foreground mb-6">{featuredArticle.summary}</p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <User className="w-4 h-4" />
-                      <span>{featuredArticle.author}</span>
-                    </div>
-                    <Button>
-                      Read More
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </Link>
           </div>
         )}
 
@@ -186,42 +191,44 @@ const News = () => {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {regularArticles.map((article, index) => (
-                <Card key={index} className="overflow-hidden hover:shadow-hover transition-shadow duration-300 cursor-pointer group">
-                  <div className="bg-muted/30 h-48 overflow-hidden">
-                    <img 
-                      src={article.image} 
-                      alt={article.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <CardHeader>
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Badge variant="outline" className="text-xs">{article.category}</Badge>
+                <Link key={index} to={`/news/${getId(article)}`}>
+                  <Card className="overflow-hidden hover:shadow-hover transition-shadow duration-300 cursor-pointer group">
+                    <div className="bg-muted/30 h-48 overflow-hidden">
+                      <img 
+                        src={article.image} 
+                        alt={article.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
                     </div>
-                    <CardTitle className="text-lg group-hover:text-primary transition-colors line-clamp-2">
-                      {article.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground text-sm mb-4 line-clamp-3">{article.summary}</p>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <div className="flex items-center space-x-1">
-                        <User className="w-3 h-3" />
-                        <span>{article.author}</span>
+                    <CardHeader>
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Badge variant="outline" className="text-xs">{article.category}</Badge>
                       </div>
-                      <div className="flex items-center space-x-3">
+                      <CardTitle className="text-lg group-hover:text-primary transition-colors line-clamp-2">
+                        {article.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground text-sm mb-4 line-clamp-3">{article.summary}</p>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <div className="flex items-center space-x-1">
-                          <Calendar className="w-3 h-3" />
-                          <span>{article.date}</span>
+                          <User className="w-3 h-3" />
+                          <span>{article.author}</span>
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <Clock className="w-3 h-3" />
-                          <span>{article.readTime}</span>
+                        <div className="flex items-center space-x-3">
+                          <div className="flex items-center space-x-1">
+                            <Calendar className="w-3 h-3" />
+                            <span>{article.date}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Clock className="w-3 h-3" />
+                            <span>{article.readTime}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
           )}

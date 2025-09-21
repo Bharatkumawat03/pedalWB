@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/store/store';
 import { setSearch } from '@/store/slices/filtersSlice';
-import { logoutUser } from '@/store/slices/authSlice';
 import pedalBharatLogo from '@/assets/pedalbharat-logo.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,13 +19,16 @@ import {
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
+  
+  // Safely destructure auth state with fallbacks
   const auth = useSelector((state: RootState) => state.auth);
+  const isAuthenticated = auth?.isAuthenticated || false;
+  const user = auth?.user;
+  
   const cartItems = useSelector((state: RootState) => state.cart.items || []);
   const wishlistItems = useSelector((state: RootState) => state.wishlist.items || []);
   const searchValue = useSelector((state: RootState) => state.filters.search);
   
-  const isAuthenticated = auth?.isAuthenticated || false;
-  const user = auth?.user;
   const cartItemCount = cartItems.reduce((total, item) => total + (item.quantity || 0), 0);
   const wishlistCount = wishlistItems.length;
 
@@ -43,29 +45,27 @@ const Header = () => {
     <header className="bg-background border-b border-border sticky top-0 z-50 backdrop-blur-md bg-background/95">
       {/* Top Bar */}
       <div className="border-b border-border/50">
-        <div className=" px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-10 text-sm">
             <div className="text-muted-foreground">
               📞 +91 123 456 7890 | support@pedalbharat.com
             </div>
             <div className="hidden md:flex items-center space-x-4 text-muted-foreground">
-              <span>Free shipping on orders over ₹2000</span>
+              <span>Free shipping on orders above ₹5,000</span>
+              <span>•</span>
+              <span>30-day returns</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Header */}
-      <div className="px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3">
-            <img 
-              src={pedalBharatLogo} 
-              alt="PedalBharat Logo" 
-              className="w-10 h-10 rounded-full"
-            />
-            <span className="text-xl font-bold text-foreground">PedalBharat</span>
+          <Link to="/" className="flex items-center space-x-2">
+            <img src={pedalBharatLogo} alt="PedalBharat" className="h-8 w-auto" />
+            <span className="text-xl font-bold text-foreground hidden sm:block">PedalBharat</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -90,6 +90,11 @@ const Header = () => {
                 placeholder="Search cycling gear..."
                 value={searchValue}
                 onChange={(e) => dispatch(setSearch(e.target.value))}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && searchValue.trim()) {
+                    window.location.href = '/shop';
+                  }
+                }}
                 className="pl-10 bg-muted/50 border-muted focus:border-primary"
               />
             </div>
@@ -98,11 +103,16 @@ const Header = () => {
           {/* Action Buttons */}
           <div className="flex items-center space-x-3">
             {/* Mobile Search */}
-            <Button variant="ghost" size="icon" className="lg:hidden">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="lg:hidden"
+              onClick={() => window.location.href = '/shop'}
+            >
               <Search className="w-5 h-5" />
             </Button>
 
-            {/* Wishlist */}
+            {/* Wishlist - Always visible but will redirect to login if not authenticated */}
             <Link to="/wishlist">
               <Button variant="ghost" size="icon" className="relative">
                 <Heart className="w-5 h-5" />
@@ -114,7 +124,7 @@ const Header = () => {
               </Button>
             </Link>
 
-            {/* Cart */}
+            {/* Cart - Always visible and works without authentication */}
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingCart className="w-5 h-5" />
@@ -126,9 +136,9 @@ const Header = () => {
               </Button>
             </Link>
 
-            {/* User Account */}
+            {/* Profile Icon - Always visible */}
             <Link to="/account">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" title={isAuthenticated ? `Welcome, ${user?.firstName || 'User'}` : 'Sign in to your account'}>
                 <User className="w-5 h-5" />
               </Button>
             </Link>
@@ -160,6 +170,43 @@ const Header = () => {
                 {item.name}
               </Link>
             ))}
+            
+            {/* Mobile Auth Section */}
+            {isAuthenticated ? (
+              <div className="border-t border-border pt-2 mt-2">
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  Welcome, {user?.firstName || 'User'}
+                </div>
+                <Link
+                  to="/account"
+                  className="block px-3 py-2 text-foreground hover:text-primary hover:bg-muted/50 rounded-md transition-colors duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  My Account
+                </Link>
+              </div>
+            ) : (
+              <div className="border-t border-border pt-2 mt-2">
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  Sign in to access your account and wishlist
+                </div>
+                <Link
+                  to="/login"
+                  className="block px-3 py-2 text-foreground hover:text-primary hover:bg-muted/50 rounded-md transition-colors duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/signup"
+                  className="block px-3 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md transition-colors duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
+            
             <div className="px-3 py-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -168,6 +215,11 @@ const Header = () => {
                   placeholder="Search cycling gear..."
                   value={searchValue}
                   onChange={(e) => dispatch(setSearch(e.target.value))}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && searchValue.trim()) {
+                      window.location.href = '/shop';
+                    }
+                  }}
                   className="pl-10 bg-muted/50 border-muted"
                 />
               </div>

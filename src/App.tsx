@@ -7,6 +7,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 import AppInitializer from "./components/AppInitializer";
+import ScrollToTop from "./components/common/ScrollToTop";
+import ScrollToTopOnRouteChange from "./components/common/ScrollToTopOnRouteChange";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
@@ -25,10 +27,18 @@ import Shipping from "./pages/Shipping";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Refund from "./pages/Refund";
+import Checkout from "./pages/Checkout";
 import Cookies from "./pages/Cookies";
 import Press from "./pages/Press";
 import News from "./pages/News";
+import BlogDetail from "./pages/BlogDetail";
+import PressDetail from "./pages/PressDetail";
+import NewsDetail from "./pages/NewsDetail";
 import NotFound from "./pages/NotFound";
+import Category from "./pages/Category";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
 
 const queryClient = new QueryClient();
 
@@ -39,32 +49,42 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ScrollToTopOnRouteChange />
           <AppInitializer>
             <Layout>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/shop" element={<Shop />} />
-              <Route path="/product/:id" element={<ProductDetail />} />
-              <Route path="/cart" element={<Cart />} />
-              <Route path="/wishlist" element={<Wishlist />} />
-              <Route path="/categories" element={<Categories />} />
-              <Route path="/brands" element={<Brands />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/account" element={<Account />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/careers" element={<Careers />} />
-              <Route path="/help" element={<Help />} />
-              <Route path="/returns" element={<Returns />} />
-              <Route path="/shipping" element={<Shipping />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/refund" element={<Refund />} />
-              <Route path="/cookies" element={<Cookies />} />
-              <Route path="/press" element={<Press />} />
-              <Route path="/news" element={<News />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/shop" element={<Shop />} />
+                <Route path="/product/:id" element={<ProductDetail />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route path="/wishlist" element={<Wishlist />} />
+                <Route path="/categories" element={<Categories />} />
+                <Route path="/brands" element={<Brands />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:id" element={<BlogDetail />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/account" element={<Account />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/careers" element={<Careers />} />
+                <Route path="/help" element={<Help />} />
+                <Route path="/returns" element={<Returns />} />
+                <Route path="/shipping" element={<Shipping />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/refund" element={<Refund />} />
+                <Route path="/cookies" element={<Cookies />} />
+                <Route path="/press" element={<Press />} />
+                <Route path="/press/:id" element={<PressDetail />} />
+                <Route path="/news" element={<News />} />
+                <Route path="/news/:id" element={<NewsDetail />} />
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/category/:categoryId" element={<Category />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <ScrollToTop />
             </Layout>
           </AppInitializer>
         </BrowserRouter>

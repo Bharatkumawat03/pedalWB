@@ -50,60 +50,117 @@ class ProductService {
       }
     });
 
-    return await api.get(`/products?${params.toString()}`);
+    const response = await api.get(`/products?${params.toString()}`);
+    return response;
   }
 
-  // Get single product
-  async getProduct(id: string): Promise<ProductResponse> {
-    return await api.get(`/products/${id}`);
+  // Get single product by ID
+  async getProduct(productId: string): Promise<ProductResponse> {
+    const response = await api.get(`/products/${productId}`);
+    return response;
   }
 
   // Get featured products
   async getFeaturedProducts(limit = 8): Promise<any[]> {
-    const response = await api.get(`/products/featured?limit=${limit}`);
-    return response.data;
+    try {
+      const response = await api.get(`/products/featured?limit=${limit}`);
+      // Handle different response structures
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      } else if (response.data && response.data.products && Array.isArray(response.data.products)) {
+        return response.data.products;
+      } else if (response && Array.isArray(response)) {
+        return response;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching featured products:', error);
+      return [];
+    }
   }
 
   // Get new products
   async getNewProducts(limit = 8): Promise<any[]> {
-    const response = await api.get(`/products/new?limit=${limit}`);
-    return response.data;
+    try {
+      const response = await api.get(`/products/new?limit=${limit}`);
+      // Handle different response structures
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      } else if (response.data && response.data.products && Array.isArray(response.data.products)) {
+        return response.data.products;
+      } else if (response && Array.isArray(response)) {
+        return response;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching new products:', error);
+      return [];
+    }
   }
 
   // Search products
   async searchProducts(query: string, limit = 10): Promise<any[]> {
-    const response = await api.get(`/products/search?q=${encodeURIComponent(query)}&limit=${limit}`);
-    return response.data;
+    try {
+      const response = await api.get(`/products/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+      // Handle different response structures
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      } else if (response.data && response.data.products && Array.isArray(response.data.products)) {
+        return response.data.products;
+      } else if (response && Array.isArray(response)) {
+        return response;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error searching products:', error);
+      return [];
+    }
   }
 
   // Get product reviews
   async getProductReviews(productId: string, page = 1, limit = 10, sort = 'newest'): Promise<any> {
-    return await api.get(`/products/${productId}/reviews?page=${page}&limit=${limit}&sort=${sort}`);
+    const response = await api.get(`/products/${productId}/reviews?page=${page}&limit=${limit}&sort=${sort}`);
+    return response;
   }
 
-  // Add product review
-  async addProductReview(productId: string, review: {
-    rating: number;
-    title: string;
-    comment: string;
-  }): Promise<any> {
-    return await api.post(`/products/${productId}/reviews`, review);
+  // Get product categories
+  async getCategories(): Promise<any[]> {
+    try {
+      const response = await api.get('/categories');
+      // Handle different response structures
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      } else if (response.data && response.data.categories && Array.isArray(response.data.categories)) {
+        return response.data.categories;
+      } else if (response && Array.isArray(response)) {
+        return response;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      return [];
+    }
   }
 
-  // Admin: Create product
-  async createProduct(productData: any): Promise<any> {
-    return await api.post('/products', productData);
-  }
-
-  // Admin: Update product
-  async updateProduct(id: string, productData: any): Promise<any> {
-    return await api.put(`/products/${id}`, productData);
-  }
-
-  // Admin: Delete product
-  async deleteProduct(id: string): Promise<void> {
-    await api.delete(`/products/${id}`);
+  // Get product brands
+  async getBrands(): Promise<any[]> {
+    try {
+      const response = await api.get('/brands');
+      // Handle different response structures
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      } else if (response.data && response.data.brands && Array.isArray(response.data.brands)) {
+        return response.data.brands;
+      } else if (response && Array.isArray(response)) {
+        return response;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching brands:', error);
+      return [];
+    }
   }
 }
 
-export default new ProductService();
+const productService = new ProductService();
+export default productService;

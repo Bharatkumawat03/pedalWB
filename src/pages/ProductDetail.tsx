@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '@/store/store';
+import { RootState, AppDispatch } from '@/store/store';
 import { addToCart } from '@/store/slices/cartSlice';
 import { toggleWishlist } from '@/store/slices/wishlistSlice';
 import productService from '@/services/productService';
@@ -22,7 +22,7 @@ import {
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [product, setProduct] = useState<any>(null);
@@ -51,13 +51,12 @@ const ProductDetail = () => {
     fetchProduct();
   }, [id]);
   
-  const isInWishlist = useSelector((state: RootState) =>
-    state.wishlist.items.some((item: any) => 
-      item.product?._id === id || 
-      item.product?.id === id ||
-      item._id === id ||
-      (item as any).id === id
-    )
+  // Safely access wishlist state with fallback
+  const wishlistState = useSelector((state: RootState) => state.wishlist);
+  const wishlistItems = wishlistState?.items || [];
+  
+  const isInWishlist = wishlistItems.some((item: any) => 
+    item.id === id
   );
 
   if (loading) {
@@ -71,14 +70,28 @@ const ProductDetail = () => {
     );
   }
 
-  if (error || !product) {
+  if (error) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">
-            {error || 'Product Not Found'}
-          </h1>
-          <Button onClick={() => navigate('/shop')}>
+          <h1 className="text-2xl font-bold text-foreground mb-4">Product Not Found</h1>
+          <p className="text-muted-foreground mb-8">{error}</p>
+          <Button onClick={() => navigate('/shop')} variant="outline">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Shop
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-4">Product Not Found</h1>
+          <p className="text-muted-foreground mb-8">The product you're looking for doesn't exist.</p>
+          <Button onClick={() => navigate('/shop')} variant="outline">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Shop
           </Button>
@@ -88,30 +101,87 @@ const ProductDetail = () => {
   }
 
   const handleAddToCart = () => {
-    dispatch(addToCart({
-      productId: product._id || product.id,
-      quantity: quantity,
-      selectedColor: undefined,
-      selectedSize: undefined
-    }));
+    if (id) {
+      // Add multiple quantities
+      for (let i = 0; i < quantity; i++) {
+        dispatch(addToCart({
+          id: id,
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          category: product.category || product.brand || 'General'
+        }));
+      }
+    }
   };
 
   const handleToggleWishlist = () => {
-    dispatch(toggleWishlist(product._id || product.id));
+    if (id) {
+      dispatch(toggleWishlist({
+        id: id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        category: product.category || product.brand || 'General'
+      }));
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: product.name,
+          text: product.description,
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.log('Error sharing:', err);
+      }
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(window.location.href);
+    }
   };
 
   const discountPercentage = product.originalPrice 
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
-  // Product images from API or fallback
-  const productImages = product.images?.length > 0 
-    ? product.images.map((img: any) => img.url || img)
-    : [product.image || '/placeholder-product.jpg'];
+  const isOutOfStock = !product.inventory.inStock || (product.inventory.stock !== undefined && product.inventory.stock <= 0);
+
+  // Safely extract rating values
+  const getRatingValue = () => {
+    if (typeof product.rating === 'number') {
+      return product.rating;
+    }
+    if (product.rating && typeof product.rating === 'object') {
+      return product.rating.average || product.rating.value || 0;
+    }
+    return product.averageRating || 0;
+  };
+
+  const getReviewCount = () => {
+    if (typeof product.reviews === 'number') {
+      return product.reviews;
+    }
+    if (product.rating && typeof product.rating === 'object') {
+      return product.rating.count || product.rating.reviews || 0;
+    }
+    return product.reviewCount || 0;
+  };
+
+  const ratingValue = getRatingValue();
+  const reviewCount = getReviewCount();
+
+  // Create product images array for gallery
+  const productImages = product.images && product.images.length > 0 
+    ? product.images 
+    : [product.image, product.image, product.image, product.image];
 
   return (
     <div className="min-h-screen bg-background py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
           <button onClick={() => navigate('/')} className="hover:text-primary">Home</button>
@@ -158,9 +228,8 @@ const ProductDetail = () => {
             {/* Header */}
             <div>
               <div className="flex items-center gap-3 mb-2">
-                {product.brand && <Badge className="bg-muted text-muted-foreground">{product.brand}</Badge>}
+                <Badge className="bg-muted text-muted-foreground">{product.brand}</Badge>
                 {product.isNew && <Badge className="bg-primary text-primary-foreground">NEW</Badge>}
-                {product.isFeatured && <Badge className="bg-accent text-accent-foreground">FEATURED</Badge>}
                 {discountPercentage > 0 && (
                   <Badge variant="destructive">-{discountPercentage}%</Badge>
                 )}
@@ -169,25 +238,23 @@ const ProductDetail = () => {
               <h1 className="text-3xl font-bold text-foreground mb-4">{product.name}</h1>
               
               {/* Rating */}
-              {product.rating && (
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-4 h-4 ${
-                          i < Math.floor(product.rating.average)
-                            ? 'text-yellow-400 fill-current'
-                            : 'text-muted-foreground'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-sm text-muted-foreground">
-                    {product.rating.average} ({product.reviews || product.reviewCount || 0} reviews)
-                  </span>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`w-4 h-4 ${
+                        i < Math.floor(ratingValue)
+                          ? 'text-yellow-400 fill-current'
+                          : 'text-muted-foreground'
+                      }`}
+                    />
+                  ))}
                 </div>
-              )}
+                <span className="text-sm text-muted-foreground">
+                  {ratingValue} ({reviewCount} reviews)
+                </span>
+              </div>
 
               <p className="text-muted-foreground leading-relaxed">
                 {product.description}
@@ -198,7 +265,7 @@ const ProductDetail = () => {
             <div className="space-y-2">
               <div className="flex items-center gap-3">
                 <span className="text-3xl font-bold text-foreground">
-                  ₹{product.price.toLocaleString()}
+                  ₹{product.price?.toLocaleString() || 'N/A'}
                 </span>
                 {product.originalPrice && (
                   <span className="text-xl text-muted-foreground line-through">
@@ -206,10 +273,8 @@ const ProductDetail = () => {
                   </span>
                 )}
               </div>
-              {(product.stock > 0 || product.inStock) ? (
-                <Badge className="bg-green-100 text-green-800 border-green-200">
-                  {product.stock ? `${product.stock} in stock` : 'In Stock'}
-                </Badge>
+              {!isOutOfStock ? (
+                <Badge className="bg-green-100 text-green-800 border-green-200">In Stock</Badge>
               ) : (
                 <Badge variant="destructive">Out of Stock</Badge>
               )}
@@ -230,21 +295,6 @@ const ProductDetail = () => {
               </div>
             )}
 
-            {/* Specifications */}
-            {product.specifications && Object.keys(product.specifications).length > 0 && (
-              <div>
-                <h3 className="font-semibold text-foreground mb-3">Specifications</h3>
-                <div className="grid grid-cols-1 gap-2">
-                  {Object.entries(product.specifications).map(([key, value]) => (
-                    <div key={key} className="flex justify-between text-sm">
-                      <span className="text-muted-foreground capitalize">{key}:</span>
-                      <span className="text-foreground font-medium">{value as string}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Quantity and Actions */}
             <div className="space-y-4">
               <div className="flex items-center gap-4">
@@ -252,14 +302,16 @@ const ProductDetail = () => {
                 <div className="flex border border-border rounded-md">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-3 py-2 hover:bg-muted transition-colors"
+                    className="px-3 py-2 hover:bg-muted transition-colors disabled:opacity-50"
+                    disabled={quantity <= 1}
                   >
                     -
                   </button>
-                  <span className="px-4 py-2 border-x border-border">{quantity}</span>
+                  <span className="px-4 py-2 border-x border-border min-w-[3rem] text-center">{quantity}</span>
                   <button
                     onClick={() => setQuantity(quantity + 1)}
-                    className="px-3 py-2 hover:bg-muted transition-colors"
+                    className="px-3 py-2 hover:bg-muted transition-colors disabled:opacity-50"
+                    disabled={isOutOfStock}
                   >
                     +
                   </button>
@@ -269,7 +321,7 @@ const ProductDetail = () => {
               <div className="flex gap-3">
                 <Button
                   onClick={handleAddToCart}
-                  disabled={!(product.stock > 0 || product.inStock)}
+                  disabled={isOutOfStock}
                   className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
                   size="lg"
                 >
@@ -288,7 +340,12 @@ const ProductDetail = () => {
                   />
                 </Button>
                 
-                <Button variant="outline" size="lg" className="px-6">
+                <Button 
+                  onClick={handleShare}
+                  variant="outline" 
+                  size="lg" 
+                  className="px-6"
+                >
                   <Share2 className="w-5 h-5" />
                 </Button>
               </div>
@@ -324,6 +381,42 @@ const ProductDetail = () => {
             </Card>
           </div>
         </div>
+
+        {/* Related Products */}
+        {relatedProducts.length > 0 && (
+          <div className="mt-16">
+            <h2 className="text-2xl font-bold text-foreground mb-8">Related Products</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {relatedProducts.map((relatedProduct: any) => (
+                <Card key={relatedProduct._id || relatedProduct.id} className="group hover:shadow-lg transition-shadow">
+                  <div className="aspect-square overflow-hidden">
+                    <img
+                      src={relatedProduct.image}
+                      alt={relatedProduct.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-foreground mb-2 line-clamp-2">
+                      {relatedProduct.name}
+                    </h3>
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold text-foreground">
+                        ₹{relatedProduct.price?.toLocaleString() || 'N/A'}
+                      </span>
+                      <Button
+                        size="sm"
+                        onClick={() => navigate(`/product/${relatedProduct._id || relatedProduct.id}`)}
+                      >
+                        View
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

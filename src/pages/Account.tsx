@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/store/store';
+import { logoutUser } from '@/store/slices/authSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import authService from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { Link } from 'react-router-dom';
 import { 
   User, 
   ShoppingBag, 
@@ -19,120 +20,200 @@ import {
   Package,
   Truck,
   CheckCircle,
-  Clock
+  Clock,
+  LogOut
 } from 'lucide-react';
+import userService from '@/services/userService';
+import orderService from '@/services/orderService';
 
 const Account = () => {
   const dispatch = useDispatch<AppDispatch>();
+  
+  // Check authentication
   const auth = useSelector((state: RootState) => state.auth);
-  const authUser = auth?.user;
   const isAuthenticated = auth?.isAuthenticated || false;
-  const wishlistItemsCount = useSelector((state: RootState) => state.wishlist.items.length);
-  const [user, setUser] = useState<any>(null);
+  const user = auth?.user;
+
+  // State for API data
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [addresses, setAddresses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>({});
 
+  // Debug authentication state
   useEffect(() => {
-    const fetchUserData = async () => {
+    setDebugInfo({
+      reduxAuth: auth,
+      localStorageToken: localStorage.getItem('token'),
+      localStorageUser: localStorage.getItem('user'),
+      isAuthenticatedRedux: isAuthenticated,
+      isAuthenticatedLocal: !!localStorage.getItem('token')
+    });
+  }, [auth, isAuthenticated]);
+
+  // Load user data from backend
+  useEffect(() => {
+    const loadUserData = async () => {
       if (!isAuthenticated) {
+        console.log('User not authenticated, skipping API calls');
         setLoading(false);
         return;
       }
-
+      
       try {
-        const userData = await authService.getCurrentUser();
-        setUser(userData);
+        setLoading(true);
+        setError(null);
+        
+        console.log('Loading user data...', { isAuthenticated, user });
+        
+        // Load user profile
+        console.log('Fetching user profile...');
+        const profileResponse = await userService.getUserProfile();
+        console.log('Profile response:', profileResponse);
+        setUserProfile(profileResponse.data);
+        
+        // Load user orders
+        console.log('Fetching user orders...');
+        const ordersResponse = await orderService.getUserOrders();
+        console.log('Orders response:', ordersResponse);
+        setOrders(ordersResponse.data || []);
+        
+        // Load user addresses
+        console.log('Fetching user addresses...');
+        const addressesResponse = await userService.getAddresses();
+        console.log('Addresses response:', addressesResponse);
+        setAddresses(addressesResponse || []);
+        
       } catch (err: any) {
-        console.error('Error fetching user data:', err);
-        setError(err.message);
-        // Fallback to auth state user
-        if (authUser) {
-          setUser({
-            name: `${authUser.firstName} ${authUser.lastName}`,
-            email: authUser.email,
-            phone: '',
-            joinDate: new Date().toISOString().split('T')[0]
-          });
-        }
+        console.error('Error loading user data:', err);
+        setError(err.message || 'Failed to load user data');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUserData();
-  }, [isAuthenticated, authUser]);
-
-  const [orders, setOrders] = useState<any[]>([]);
-  const [ordersLoading, setOrdersLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchOrders = async () => {
-      if (!isAuthenticated) {
-        setOrdersLoading(false);
-        return;
-      }
-
-      try {
-        // Note: Order service integration would go here
-        // For now, showing empty state since orders API is not implemented
-        setOrders([]);
-      } catch (err: any) {
-        console.error('Error fetching orders:', err);
-      } finally {
-        setOrdersLoading(false);
-      }
-    };
-
-    fetchOrders();
+    loadUserData();
   }, [isAuthenticated]);
 
-  const [addresses, setAddresses] = useState<any[]>([]);
-  const [addressesLoading, setAddressesLoading] = useState(true);
+  const handleLogout = () => {
+    dispatch(logoutUser());
+  };
 
-  useEffect(() => {
-    const fetchAddresses = async () => {
-      if (!isAuthenticated) {
-        setAddressesLoading(false);
-        return;
-      }
+  const handleUpdateProfile = async (formData: any) => {
+    try {
+      const response = await userService.updateUserProfile(formData);
+      setUserProfile(response.data);
+    } catch (err: any) {
+      console.error('Error updating profile:', err);
+      setError(err.message || 'Failed to update profile');
+    }
+  };
 
-      try {
-        // Note: User addresses service integration would go here
-        // For now, showing empty state since user addresses API is not fully implemented
-        setAddresses([]);
-      } catch (err: any) {
-        console.error('Error fetching addresses:', err);
-      } finally {
-        setAddressesLoading(false);
-      }
-    };
+  const handleAddAddress = async (addressData: any) => {
+    try {
+      const response = await userService.addAddress(addressData);
+      setAddresses([...addresses, response.data]);
+    } catch (err: any) {
+      console.error('Error adding address:', err);
+      setError(err.message || 'Failed to add address');
+    }
+  };
 
-    fetchAddresses();
-  }, [isAuthenticated]);
+  const handleUpdateAddress = async (addressId: string, addressData: any) => {
+    try {
+      const response = await userService.updateAddress(addressId, addressData);
+      setAddresses(addresses.map(addr => 
+        addr._id === addressId ? response.data : addr
+      ));
+    } catch (err: any) {
+      console.error('Error updating address:', err);
+      setError(err.message || 'Failed to update address');
+    }
+  };
 
+  const handleDeleteAddress = async (addressId: string) => {
+    try {
+      await userService.deleteAddress(addressId);
+      setAddresses(addresses.filter(addr => addr._id !== addressId));
+    } catch (err: any) {
+      console.error('Error deleting address:', err);
+      setError(err.message || 'Failed to delete address');
+    }
+  };
+
+  // Show login prompt if not authenticated
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-6 text-center">
-            <User className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-xl font-semibold mb-2">Please Log In</h2>
-            <p className="text-muted-foreground mb-4">You need to be logged in to view your account.</p>
-            <Button onClick={() => window.location.href = '/login'} className="w-full">
-              Go to Login
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-background py-12">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <User className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
+            <h1 className="text-3xl font-bold text-foreground mb-4">Sign In Required</h1>
+            <p className="text-muted-foreground mb-8">
+              Please sign in to view and manage your account.
+            </p>
+            
+            {/* Debug Info */}
+            <div className="mb-8 p-4 bg-gray-100 rounded-lg text-left max-w-2xl mx-auto">
+              <h3 className="font-semibold mb-2">Debug Info:</h3>
+              <pre className="text-xs overflow-auto">
+                {JSON.stringify(debugInfo, null, 2)}
+              </pre>
+            </div>
+            
+            <div className="flex gap-4 justify-center">
+              <Link to="/login">
+                <Button size="lg" className="bg-primary hover:bg-primary/90">
+                  Sign In
+                </Button>
+              </Link>
+              <Link to="/shop">
+                <Button size="lg" variant="outline">
+                  Continue Shopping
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading account...</p>
+      <div className="min-h-screen bg-background py-12">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading your account...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background py-12">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-4">Error Loading Account</h1>
+            <p className="text-muted-foreground mb-8">{error}</p>
+            
+            {/* Debug Info */}
+            <div className="mb-8 p-4 bg-gray-100 rounded-lg text-left max-w-2xl mx-auto">
+              <h3 className="font-semibold mb-2">Debug Info:</h3>
+              <pre className="text-xs overflow-auto">
+                {JSON.stringify(debugInfo, null, 2)}
+              </pre>
+            </div>
+            
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -162,11 +243,23 @@ const Account = () => {
 
   return (
     <div className="min-h-screen bg-background py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">My Account</h1>
-          <p className="text-muted-foreground">Manage your account, orders, and preferences</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">My Account</h1>
+              <p className="text-muted-foreground">Manage your account, orders, and preferences</p>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={handleLogout}
+              className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -177,17 +270,16 @@ const Account = () => {
                 <div className="text-center mb-6">
                   <Avatar className="w-20 h-20 mx-auto mb-4">
                     <AvatarFallback className="text-lg bg-primary text-primary-foreground">
-                      {(user?.name || `${authUser?.firstName} ${authUser?.lastName}`).split(' ').map((n: string) => n[0]).join('')}
+                      {userProfile?.firstName?.charAt(0) || user?.firstName?.charAt(0) || 'U'}
+                      {userProfile?.lastName?.charAt(0) || user?.lastName?.charAt(0) || ''}
                     </AvatarFallback>
                   </Avatar>
                   <h3 className="text-lg font-semibold text-foreground">
-                    {user?.name || `${authUser?.firstName} ${authUser?.lastName}`}
+                    {userProfile?.firstName || user?.firstName || 'User'} {userProfile?.lastName || user?.lastName || ''}
                   </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {user?.email || authUser?.email}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{userProfile?.email || user?.email}</p>
                   <Badge variant="secondary" className="mt-2">
-                    Member since {user?.joinDate ? new Date(user.joinDate).getFullYear() : new Date().getFullYear()}
+                    Member since {new Date(userProfile?.createdAt || user?.createdAt || Date.now()).getFullYear()}
                   </Badge>
                 </div>
                 
@@ -198,7 +290,7 @@ const Account = () => {
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Heart className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">{wishlistItemsCount} Wishlist Items</span>
+                    <span className="text-muted-foreground">Wishlist Items</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <MapPin className="w-4 h-4 text-muted-foreground" />
@@ -241,51 +333,43 @@ const Account = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {ordersLoading ? (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    {orders.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">No orders found</p>
                       </div>
-                    ) : orders.length > 0 ? (
+                    ) : (
                       <div className="space-y-4">
                         {orders.map((order) => (
-                          <div key={order.id} className="p-4 border border-border rounded-lg bg-background/50">
+                          <div key={order._id || order.id} className="p-4 border border-border rounded-lg bg-background/50">
                             <div className="flex items-center justify-between mb-3">
                               <div className="flex items-center gap-3">
                                 {getStatusIcon(order.status)}
                                 <div>
-                                  <h4 className="font-semibold text-foreground">{order.id}</h4>
+                                  <h4 className="font-semibold text-foreground">{order.orderNumber || order._id}</h4>
                                   <p className="text-sm text-muted-foreground">
-                                    {new Date(order.date).toLocaleDateString('en-IN')} • {order.items} item{order.items > 1 ? 's' : ''}
+                                    {new Date(order.createdAt || order.date).toLocaleDateString('en-IN')} • {order.items?.length || 0} item{(order.items?.length || 0) > 1 ? 's' : ''}
                                   </p>
                                 </div>
                               </div>
                               <div className="text-right">
-                                <p className="font-semibold text-foreground">₹{order.total.toLocaleString('en-IN')}</p>
+                                <p className="font-semibold text-foreground">₹{order.totalAmount?.toLocaleString('en-IN') || order.total?.toLocaleString('en-IN')}</p>
                                 {getStatusBadge(order.status)}
                               </div>
                             </div>
                             
-                            {order.trackingId && (
+                            {order.trackingNumber && (
                               <div className="flex items-center justify-between pt-3 border-t border-border">
                                 <span className="text-sm text-muted-foreground">
-                                  Tracking ID: {order.trackingId}
+                                  Tracking ID: {order.trackingNumber}
                                 </span>
-                                <Button variant="outline" size="sm">
+                                <Button variant="outline" size="sm" onClick={() => window.open(`https://parcelsapp.com/en/tracking/${order.trackingNumber}`, '_blank') }>
                                   Track Order
                                 </Button>
                               </div>
                             )}
                           </div>
                         ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <ShoppingBag className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                        <h3 className="text-lg font-semibold mb-2">No Orders Yet</h3>
-                        <p className="text-muted-foreground mb-4">Start shopping to see your orders here!</p>
-                        <Button onClick={() => window.location.href = '/shop'}>
-                          Browse Products
-                        </Button>
                       </div>
                     )}
                   </CardContent>
@@ -302,23 +386,34 @@ const Account = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <form className="space-y-6">
+                    <form className="space-y-6" onSubmit={(e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.target as HTMLFormElement);
+                      handleUpdateProfile({
+                        firstName: formData.get('firstName'),
+                        lastName: formData.get('lastName'),
+                        email: formData.get('email'),
+                        phone: formData.get('phone')
+                      });
+                    }}>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-foreground mb-2">
-                            Full Name
+                            First Name
                           </label>
                           <Input 
-                            defaultValue={user.name} 
+                            name="firstName"
+                            defaultValue={userProfile?.firstName || user?.firstName || ''} 
                             className="bg-background border-border"
                           />
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-foreground mb-2">
-                            Phone Number
+                            Last Name
                           </label>
                           <Input 
-                            defaultValue={user.phone} 
+                            name="lastName"
+                            defaultValue={userProfile?.lastName || user?.lastName || ''} 
                             className="bg-background border-border"
                           />
                         </div>
@@ -329,35 +424,26 @@ const Account = () => {
                           Email Address
                         </label>
                         <Input 
-                          defaultValue={user.email} 
+                          name="email"
+                          type="email"
+                          defaultValue={userProfile?.email || user?.email || ''} 
                           className="bg-background border-border"
                         />
                       </div>
 
-                      <Separator />
-
                       <div>
-                        <h3 className="text-lg font-semibold text-foreground mb-4">Change Password</h3>
-                        <div className="space-y-4">
-                          <Input 
-                            type="password" 
-                            placeholder="Current Password" 
-                            className="bg-background border-border"
-                          />
-                          <Input 
-                            type="password" 
-                            placeholder="New Password" 
-                            className="bg-background border-border"
-                          />
-                          <Input 
-                            type="password" 
-                            placeholder="Confirm New Password" 
-                            className="bg-background border-border"
-                          />
-                        </div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          Phone Number
+                        </label>
+                        <Input 
+                          name="phone"
+                          type="tel"
+                          defaultValue={userProfile?.phone || user?.phone || ''} 
+                          className="bg-background border-border"
+                        />
                       </div>
 
-                      <Button className="w-full">Save Changes</Button>
+                      <Button type="submit" className="w-full">Save Changes</Button>
                     </form>
                   </CardContent>
                 </Card>
@@ -372,33 +458,75 @@ const Account = () => {
                         <MapPin className="w-5 h-5" />
                         Saved Addresses
                       </CardTitle>
-                      <Button>Add New Address</Button>
+                      <Button onClick={() => {
+                        // Add new address functionality
+                        const newAddress = {
+                          type: 'home',
+                          firstName: userProfile?.firstName || user?.firstName || 'User',
+                          lastName: userProfile?.lastName || user?.lastName || '',
+                          addressLine1: '',
+                          city: '',
+                          state: '',
+                          postalCode: '',
+                          country: 'India',
+                          phone: userProfile?.phone || user?.phone || '',
+                          isDefault: false
+                        };
+                        handleAddAddress(newAddress);
+                      }}>
+                        Add New Address
+                      </Button>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {addresses.map((address) => (
-                        <div key={address.id} className="p-4 border border-border rounded-lg bg-background/50">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h4 className="font-semibold text-foreground">{address.type}</h4>
-                                {address.isDefault && (
-                                  <Badge variant="default">Default</Badge>
+                    {addresses.length === 0 ? (
+                      <div className="text-center py-8">
+                        <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">No addresses found</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {addresses.map((address) => (
+                          <div key={address._id || address.id} className="p-4 border border-border rounded-lg bg-background/50">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h4 className="font-semibold text-foreground">{address.type || 'Address'}</h4>
+                                  {address.isDefault && (
+                                    <Badge variant="default">Default</Badge>
+                                  )}
+                                </div>
+                                <p className="text-foreground">{address.firstName} {address.lastName}</p>
+                                <p className="text-muted-foreground">{address.addressLine1}</p>
+                                {address.addressLine2 && (
+                                  <p className="text-muted-foreground">{address.addressLine2}</p>
                                 )}
+                                <p className="text-muted-foreground">{address.city}, {address.state} - {address.postalCode}</p>
+                                <p className="text-muted-foreground">{address.phone}</p>
                               </div>
-                              <p className="text-foreground">{address.name}</p>
-                              <p className="text-muted-foreground">{address.address}</p>
-                              <p className="text-muted-foreground">{address.phone}</p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm">Edit</Button>
-                              <Button variant="destructive" size="sm">Delete</Button>
+                              <div className="flex gap-2">
+                                <Button variant="outline" size="sm" onClick={() => {
+                                  // Edit address functionality
+                                  const updatedData = prompt('Enter new address:', address.addressLine1);
+                                  if (updatedData) {
+                                    handleUpdateAddress(address._id || address.id, { ...address, addressLine1: updatedData });
+                                  }
+                                }}>
+                                  Edit
+                                </Button>
+                                <Button variant="destructive" size="sm" onClick={() => {
+                                  if (confirm('Are you sure you want to delete this address?')) {
+                                    handleDeleteAddress(address._id || address.id);
+                                  }
+                                }}>
+                                  Delete
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

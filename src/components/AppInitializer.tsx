@@ -2,8 +2,6 @@ import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import { getCurrentUser } from '@/store/slices/authSlice';
-import { fetchCart } from '@/store/slices/cartSlice';
-import { fetchWishlist } from '@/store/slices/wishlistSlice';
 
 interface AppInitializerProps {
   children: React.ReactNode;
@@ -21,9 +19,8 @@ const AppInitializer = ({ children }: AppInitializerProps) => {
         // If user has a token, try to get current user
         if (isAuthenticated) {
           await dispatch(getCurrentUser());
-          // Load cart and wishlist for authenticated users
-          dispatch(fetchCart());
-          dispatch(fetchWishlist());
+          // Note: Cart and wishlist are now managed locally with simple synchronous actions
+          // No need to fetch from API as they work with local state
         }
       } catch (error) {
         console.error('Error initializing app:', error);

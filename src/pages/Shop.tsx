@@ -4,6 +4,7 @@ import { RootState } from '@/store/store';
 import { setCategory, setPriceRange, toggleBrand, setSortBy, setSearch } from '@/store/slices/filtersSlice';
 import productService from '@/services/productService';
 import categoryService from '@/services/categoryService';
+import { products as fallbackProducts, categories as fallbackCategories, brands as fallbackBrands } from '@/data/products';
 import ProductCard from '@/components/product/ProductCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ const Shop = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalProducts: 0 });
+  const [useBackend, setUseBackend] = useState(true);
 
   // Fetch initial data
   useEffect(() => {
@@ -47,13 +49,15 @@ const Shop = () => {
         // Extract unique brands from products
         const uniqueBrands = [...new Set((productsData.data || []).map((p: any) => p.brand))];
         setBrands(uniqueBrands.sort());
+        setUseBackend(true);
       } catch (err: any) {
         console.error('Error fetching data:', err);
         setError(err.message);
-        // Set fallback data
-        setCategories([{ _id: 'all', name: 'All Categories', slug: 'all' }]);
-        setProducts([]);
-        setBrands([]);
+        // Fallback to static data
+        setCategories([{ id: 'all', name: 'All Categories' }, ...fallbackCategories]);
+        setProducts(fallbackProducts);
+        setBrands(fallbackBrands.sort());
+        setUseBackend(false);
       } finally {
         setLoading(false);
       }
@@ -62,10 +66,10 @@ const Shop = () => {
     fetchInitialData();
   }, []);
 
-  // Fetch products when filters change
+  // Fetch products when filters change (backend mode)
   useEffect(() => {
     const fetchFilteredProducts = async () => {
-      if (loading) return; // Skip if initial load is still happening
+      if (loading || !useBackend) return; // Skip if initial load is still happening or using fallback
       
       try {
         const filterParams: any = {
@@ -86,7 +90,7 @@ const Shop = () => {
         if (filters.priceRange[0] > 0) {
           filterParams.priceMin = filters.priceRange[0];
         }
-        if (filters.priceRange[1] < 1000) {
+        if (filters.priceRange[1] < 250000) {
           filterParams.priceMax = filters.priceRange[1];
         }
         
@@ -103,9 +107,53 @@ const Shop = () => {
     };
 
     fetchFilteredProducts();
-  }, [filters, loading]);
+  }, [filters, loading, useBackend]);
 
-  // Products are already filtered by the backend based on filters
+  // Filter and sort products (frontend mode fallback)
+  const filteredProducts = useBackend ? products : fallbackProducts
+    .filter(product => {
+      // Category filter
+      if (filters.category !== 'all' && product.category !== filters.category) {
+        return false;
+      }
+      
+      // Price filter
+      if (product.price < filters.priceRange[0] || product.price > filters.priceRange[1]) {
+        return false;
+      }
+      
+      // Brand filter
+      if (filters.brands.length > 0 && !filters.brands.includes(product.brand)) {
+        return false;
+      }
+      
+      // Search filter
+      if (filters.search && !product.name.toLowerCase().includes(filters.search.toLowerCase())) {
+        return false;
+      }
+      
+      return true;
+    })
+    .sort((a, b) => {
+      switch (filters.sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'price-low':
+          return a.price - b.price;
+        case 'price-high':
+          return b.price - a.price;
+        case 'rating':
+          const aRating = a.rating?.average || a.rating || 0;
+          const bRating = b.rating?.average || b.rating || 0;
+          return bRating - aRating;
+        case 'newest':
+          return b.isNew ? 1 : -1;
+        default:
+          return 0;
+      }
+    });
+
+  const displayProducts = useBackend ? products : filteredProducts;
 
   return (
     <div className="min-h-screen bg-background py-8">
@@ -184,13 +232,13 @@ const Shop = () => {
               {loading ? (
                 "Loading products..."
               ) : (
-                `Showing ${products.length} of ${pagination.totalProducts} products`
+                `Showing ${displayProducts.length} of ${useBackend ? pagination.totalProducts : fallbackProducts.length} products`
               )}
             </p>
             <div className="flex items-center gap-2">
               {filters.category !== 'all' && (
                 <Badge variant="secondary" className="gap-2">
-                  {categories.find(c => c._id === filters.category || c.slug === filters.category)?.name}
+                  {categories.find(c => (c._id === filters.category || c.slug === filters.category || c.id === filters.category))?.name}
                   <button
                     onClick={() => dispatch(setCategory('all'))}
                     className="text-muted-foreground hover:text-foreground"
@@ -235,10 +283,10 @@ const Shop = () => {
                 </button>
                 {categories.slice(1).map(category => (
                   <button
-                    key={category._id}
-                    onClick={() => dispatch(setCategory(category.slug || category._id))}
+                    key={category._id || category.id}
+                    onClick={() => dispatch(setCategory(category.slug || category._id || category.id))}
                     className={`block w-full text-left px-3 py-2 rounded-md transition-colors ${
-                      filters.category === (category.slug || category._id)
+                      filters.category === (category.slug || category._id || category.id)
                         ? 'bg-primary text-primary-foreground'
                         : 'hover:bg-muted'
                     }`}
@@ -258,14 +306,48 @@ const Shop = () => {
                 <Slider
                   value={filters.priceRange}
                   onValueChange={(value) => dispatch(setPriceRange(value as [number, number]))}
-                  max={1000}
+                  max={250000}
                   min={0}
-                  step={10}
+                  step={1000}
                   className="w-full"
                 />
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>₹{filters.priceRange[0]}</span>
-                  <span>₹{filters.priceRange[1]}</span>
+                  <span>₹{filters.priceRange[0].toLocaleString()}</span>
+                  <span>₹{filters.priceRange[1].toLocaleString()}</span>
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <label className="block text-xs font-medium mb-1">Min Price</label>
+                    <input
+                      type="number"
+                      value={filters.priceRange[0]}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 0;
+                        if (value <= filters.priceRange[1]) {
+                          dispatch(setPriceRange([value, filters.priceRange[1]]));
+                        }
+                      }}
+                      className="w-full px-2 py-1 text-xs border border-border rounded bg-background"
+                      min="0"
+                      max={filters.priceRange[1]}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-medium mb-1">Max Price</label>
+                    <input
+                      type="number"
+                      value={filters.priceRange[1]}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 250000;
+                        if (value >= filters.priceRange[0]) {
+                          dispatch(setPriceRange([filters.priceRange[0], value]));
+                        }
+                      }}
+                      className="w-full px-2 py-1 text-xs border border-border rounded bg-background"
+                      min={filters.priceRange[0]}
+                      max="250000"
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -312,7 +394,7 @@ const Shop = () => {
                   </div>
                 ))}
               </div>
-            ) : error ? (
+            ) : error && useBackend ? (
               <div className="text-center py-12">
                 <h3 className="text-xl font-semibold text-foreground mb-2">Unable to load products</h3>
                 <p className="text-muted-foreground mb-4">{error}</p>
@@ -320,7 +402,7 @@ const Shop = () => {
                   Try Again
                 </Button>
               </div>
-            ) : products.length === 0 ? (
+            ) : displayProducts.length === 0 ? (
               <div className="text-center py-12">
                 <h3 className="text-xl font-semibold text-foreground mb-2">No products found</h3>
                 <p className="text-muted-foreground">Try adjusting your filters</p>
@@ -331,7 +413,7 @@ const Shop = () => {
                   ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
                   : 'grid-cols-1'
               }`}>
-                {products.map(product => (
+                {displayProducts.map(product => (
                   <ProductCard key={product._id || product.id} product={product} />
                 ))}
               </div>

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,7 +43,7 @@ const Returns = () => {
 
   return (
     <div className="min-h-screen bg-background py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="text-center mb-12">
           <Badge variant="outline" className="mb-4">Returns & Exchanges</Badge>
@@ -144,11 +145,11 @@ const Returns = () => {
             Start your return process online or contact our support team for assistance.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-primary hover:bg-primary/90">
-              Start Return Request
+            <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
+              <Link to="/account?tab=orders">Start Return Request</Link>
             </Button>
-            <Button variant="outline" size="lg">
-              Contact Support
+            <Button asChild variant="outline" size="lg">
+              <Link to="/contact?subject=Return%20Support">Contact Support</Link>
             </Button>
           </div>
         </div>

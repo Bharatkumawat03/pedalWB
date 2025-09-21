@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,7 +70,7 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-background py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-foreground mb-4">
@@ -188,26 +189,30 @@ const Contact = () => {
             </Card>
           </div>
 
-          {/* Support Options */}
-          <div className="space-y-6">
-            <Card className="bg-gradient-card border-border/50">
-              <CardHeader>
-                <CardTitle className="text-xl text-foreground">How can we help?</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {supportOptions.map((option, index) => (
-                  <div key={index} className="flex items-start gap-4 p-4 rounded-lg bg-background/50 border border-border/50">
-                    <div className="text-primary mt-1">
-                      {option.icon}
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-foreground">{option.title}</h4>
-                      <p className="text-sm text-muted-foreground">{option.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+            {/* Support Options */}
+            <div className="space-y-6">
+              <Card className="bg-gradient-card border-border/50">
+                <CardHeader>
+                  <CardTitle className="text-xl text-foreground">How can we help?</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {supportOptions.map((option, index) => (
+                    <Link 
+                      key={index}
+                      to="/contact"
+                      className="flex items-start gap-4 p-4 rounded-lg bg-background/50 border border-border/50 hover:bg-muted/50 transition-colors cursor-pointer"
+                    >
+                      <div className="text-primary mt-1">
+                        {option.icon}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground">{option.title}</h4>
+                        <p className="text-sm text-muted-foreground">{option.description}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </CardContent>
+              </Card>
 
             {/* FAQ Link */}
             <Card className="bg-primary text-primary-foreground">
@@ -216,8 +221,8 @@ const Contact = () => {
                 <p className="text-sm opacity-90 mb-4">
                   Check our FAQ section for instant answers to common questions.
                 </p>
-                <Button variant="secondary" className="bg-background text-foreground hover:bg-background/90">
-                  View FAQ
+                <Button asChild variant="secondary" className="bg-background text-foreground hover:bg-background/90">
+                  <Link to="/help">View FAQ</Link>
                 </Button>
               </CardContent>
             </Card>

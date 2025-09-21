@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -68,9 +69,15 @@ const Help = () => {
     { name: 'Technical Support', count: 9 }
   ];
 
+  const filteredFaqs = faqs.filter(f =>
+    !searchQuery ||
+    f.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    f.answer.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-background py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="text-center mb-12">
           <Badge variant="outline" className="mb-4">Help Center</Badge>
@@ -118,7 +125,7 @@ const Help = () => {
           <div className="lg:col-span-2">
             <h2 className="text-2xl font-bold text-foreground mb-6">Frequently Asked Questions</h2>
             <Accordion type="single" collapsible className="space-y-4">
-              {faqs.map((faq, index) => (
+              {filteredFaqs.map((faq, index) => (
                 <AccordionItem key={index} value={`item-${index}`} className="border border-border rounded-lg px-6">
                   <AccordionTrigger className="text-left font-medium">
                     {faq.question}
@@ -136,7 +143,7 @@ const Help = () => {
             <h3 className="text-xl font-bold text-foreground mb-6">Help Categories</h3>
             <div className="space-y-3">
               {categories.map((category, index) => (
-                <Card key={index} className="cursor-pointer hover:shadow-hover transition-shadow duration-300">
+                <Card key={index} className="cursor-pointer hover:shadow-hover transition-shadow duration-300" onClick={() => setSearchQuery(category.name)}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-foreground">{category.name}</span>
@@ -151,10 +158,10 @@ const Help = () => {
             <div className="mt-8">
               <h4 className="font-semibold text-foreground mb-4">Quick Links</h4>
               <div className="space-y-2">
-                <Button variant="ghost" className="w-full justify-start">Order Status</Button>
-                <Button variant="ghost" className="w-full justify-start">Return Request</Button>
-                <Button variant="ghost" className="w-full justify-start">Size Guide</Button>
-                <Button variant="ghost" className="w-full justify-start">Warranty Info</Button>
+                <Button asChild variant="ghost" className="w-full justify-start"><Link to="/account">Order Status</Link></Button>
+                <Button asChild variant="ghost" className="w-full justify-start"><Link to="/returns">Return Request</Link></Button>
+                <Button variant="ghost" className="w-full justify-start" onClick={() => setSearchQuery('Size')}>Size Guide</Button>
+                <Button variant="ghost" className="w-full justify-start" onClick={() => setSearchQuery('Warranty')}>Warranty Info</Button>
               </div>
             </div>
           </div>

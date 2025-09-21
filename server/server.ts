@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 
 import connectDB from './config/database';
 import errorHandler from './middleware/errorHandler';
+import { protect } from './middleware/auth';
 
 // Import routes
 import authRoutes from './routes/auth';
@@ -18,6 +19,14 @@ import cartRoutes from './routes/cart';
 import wishlistRoutes from './routes/wishlist';
 import orderRoutes from './routes/orders';
 import categoryRoutes from './routes/categories';
+
+// Import admin routes
+import adminAuthRoutes from './routes/admin/auth';
+import adminDashboardRoutes from './routes/admin/dashboard';
+import adminProductRoutes from './routes/admin/products';
+import adminOrderRoutes from './routes/admin/orders';
+import adminUserRoutes from './routes/admin/users';
+import adminCategoryRoutes from './routes/admin/categories';
 
 dotenv.config();
 
@@ -42,7 +51,7 @@ app.use(compression());
 app.use(morgan('combined'));
 app.use(cors({
   origin: [
-    process.env.FRONTEND_URL || 'http://localhost:5000',
+    process.env.FRONTEND_URL || 'http://localhost:5000', 'http://localhost:3002',
     /.*\.replit\.dev$/
   ],
   credentials: true
@@ -61,6 +70,24 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/categories', categoryRoutes);
+
+// Admin API Routes
+app.use('/api/admin/auth', adminAuthRoutes);
+app.use('/api/admin/dashboard', adminDashboardRoutes);
+app.use('/api/admin/products', adminProductRoutes);
+app.use('/api/admin/orders', adminOrderRoutes);
+app.use('/api/admin/users', adminUserRoutes);
+app.use('/api/admin/categories', adminCategoryRoutes);
+
+// Test authentication endpoint
+app.get('/api/test-auth', protect as any, (req: Request, res: Response) => {
+  console.log('Test auth route - User:', (req as any).user);
+  res.json({ 
+    success: true, 
+    message: 'Authentication working!',
+    user: (req as any).user 
+  });
+});
 
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {

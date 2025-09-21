@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -65,7 +66,7 @@ const Press = () => {
 
   return (
     <div className="min-h-screen bg-background py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="text-center mb-12">
           <Badge variant="outline" className="mb-4">Press Center</Badge>
@@ -94,12 +95,14 @@ const Press = () => {
                         </div>
                       </div>
                       <CardTitle className="text-xl mb-2 hover:text-primary transition-colors cursor-pointer">
-                        {release.title}
+                        <Link to={`/press/${index + 1}`}>{release.title}</Link>
                       </CardTitle>
                     </div>
-                    <Button variant="outline" size="sm" className="mt-4 md:mt-0">
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Read More
+                    <Button asChild variant="outline" size="sm" className="mt-4 md:mt-0">
+                      <Link to={`/press/${index + 1}`}>
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Read More
+                      </Link>
                     </Button>
                   </div>
                 </CardHeader>

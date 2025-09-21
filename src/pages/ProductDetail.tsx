@@ -148,7 +148,7 @@ const ProductDetail = () => {
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
-  const isOutOfStock = !product.inStock || (product.stock !== undefined && product.stock <= 0);
+  const isOutOfStock = !product.inventory.inStock || (product.inventory.stock !== undefined && product.inventory.stock <= 0);
 
   // Safely extract rating values
   const getRatingValue = () => {

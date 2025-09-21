@@ -46,7 +46,8 @@ class OrderService {
       params.append('status', status);
     }
 
-    return await api.get(`/orders?${params.toString()}`);
+    const response = await api.get(`/orders/my-orders?${params.toString()}`) as any;
+    return response;
   }
 
   // Get single order

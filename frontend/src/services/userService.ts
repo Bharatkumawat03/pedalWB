@@ -35,12 +35,14 @@ export interface UserPreferences {
 class UserService {
   // Get user profile
   async getUserProfile(): Promise<any> {
-    return await api.get('/users/profile');
+    const response = await api.get('/users/profile') as any;
+    return response;
   }
 
   // Update user profile
   async updateUserProfile(profileData: Partial<UserProfile>): Promise<any> {
-    return await api.put('/users/profile', profileData);
+    const response = await api.put('/users/profile', profileData) as any;
+    return response;
   }
 
   // Get user dashboard data
@@ -55,20 +57,23 @@ class UserService {
 
   // Address management
   async getAddresses(): Promise<Address[]> {
-    const response = await api.get('/users/addresses');
-    return response.data;
+    const response = await api.get('/users/addresses') as any;
+    return response.data || response;
   }
 
   async addAddress(address: Omit<Address, '_id'>): Promise<any> {
-    return await api.post('/users/addresses', address);
+    const response = await api.post('/users/addresses', address) as any;
+    return response;
   }
 
   async updateAddress(addressId: string, address: Partial<Address>): Promise<any> {
-    return await api.put(`/users/addresses/${addressId}`, address);
+    const response = await api.put(`/users/addresses/${addressId}`, address) as any;
+    return response;
   }
 
   async deleteAddress(addressId: string): Promise<any> {
-    return await api.delete(`/users/addresses/${addressId}`);
+    const response = await api.delete(`/users/addresses/${addressId}`) as any;
+    return response;
   }
 }
 

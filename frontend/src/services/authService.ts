@@ -18,11 +18,14 @@ export interface User {
   firstName: string;
   lastName: string;
   email: string;
+  phone?: string;
   role: string;
   avatar?: {
     url: string;
   };
   emailVerified: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AuthResponse {
@@ -35,7 +38,7 @@ export interface AuthResponse {
 class AuthService {
   // Login user
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await api.post('/auth/login', credentials);
+    const response = await api.post('/auth/login', credentials) as AuthResponse;
     
     if (response.success && response.token) {
       localStorage.setItem('token', response.token);
@@ -47,7 +50,7 @@ class AuthService {
 
   // Register user
   async register(userData: RegisterData): Promise<AuthResponse> {
-    const response = await api.post('/auth/register', userData);
+    const response = await api.post('/auth/register', userData) as AuthResponse;
     
     if (response.success && response.token) {
       localStorage.setItem('token', response.token);
@@ -69,16 +72,16 @@ class AuthService {
 
   // Get current user
   async getCurrentUser(): Promise<User> {
-    const response = await api.get('/auth/me');
-    return response.data;
+    const response = await api.get('/auth/me') as any;
+    return response.data || response.user;
   }
 
   // Update profile
   async updateProfile(profileData: Partial<User>): Promise<User> {
-    const response = await api.put('/auth/profile', profileData);
+    const response = await api.put('/auth/profile', profileData) as any;
     
     if (response.success) {
-      const updatedUser = response.data;
+      const updatedUser = response.data || response.user;
       localStorage.setItem('user', JSON.stringify(updatedUser));
       return updatedUser;
     }
@@ -91,7 +94,7 @@ class AuthService {
     const response = await api.put('/auth/password', {
       currentPassword,
       newPassword
-    });
+    }) as any;
     
     if (!response.success) {
       throw new Error(response.message || 'Failed to change password');
@@ -100,7 +103,7 @@ class AuthService {
 
   // Forgot password
   async forgotPassword(email: string): Promise<void> {
-    const response = await api.post('/auth/forgot-password', { email });
+    const response = await api.post('/auth/forgot-password', { email }) as any;
     
     if (!response.success) {
       throw new Error(response.message || 'Failed to send reset email');
@@ -111,7 +114,7 @@ class AuthService {
   async resetPassword(token: string, newPassword: string): Promise<void> {
     const response = await api.post(`/auth/reset-password/${token}`, {
       newPassword
-    });
+    }) as any;
     
     if (!response.success) {
       throw new Error(response.message || 'Failed to reset password');

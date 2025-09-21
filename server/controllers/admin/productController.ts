@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Product from '../../models/Product';
 import { AuthenticatedRequest } from '../../types';
-import { productService } from '../../services/productService';
+import productService from '../../services/productService';
 
 // @desc    Get all products with admin filters and pagination
 // @route   GET /api/admin/products

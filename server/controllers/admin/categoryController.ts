@@ -178,7 +178,7 @@ export const toggleCategoryStatus = async (req: AuthenticatedRequest, res: Respo
       return;
     }
 
-    category.isActive = !category.isActive;
+    category.status = category.status === 'active' ? 'inactive' : 'active';
     await category.save();
 
     res.json({
@@ -202,10 +202,10 @@ export const getCategoryAnalytics = async (req: AuthenticatedRequest, res: Respo
           _id: null,
           totalCategories: { $sum: 1 },
           activeCategories: {
-            $sum: { $cond: [{ $eq: ['$isActive', true] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] }
           },
           inactiveCategories: {
-            $sum: { $cond: [{ $eq: ['$isActive', false] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ['$status', 'inactive'] }, 1, 0] }
           }
         }
       }

@@ -120,7 +120,7 @@ export const createUser = async (req: AuthenticatedRequest, res: Response, next:
     });
 
     // Remove password from response
-    user.password = undefined;
+    (user as any).password = undefined;
 
     res.status(201).json({
       success: true,

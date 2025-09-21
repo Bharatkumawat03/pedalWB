@@ -50,7 +50,7 @@ export const loginAdmin = async (req: Request, res: Response, next: NextFunction
 
     // Remove password from response
     const userObj = user.toObject();
-    delete userObj.password;
+    delete (userObj as any).password;
 
     res.json({
       success: true,
@@ -64,8 +64,8 @@ export const loginAdmin = async (req: Request, res: Response, next: NextFunction
         role: user.role,
         status: user.status,
         emailVerified: user.emailVerified,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt
+        createdAt: (user as any).createdAt,
+        updatedAt: (user as any).updatedAt
       }
     });
   } catch (error) {

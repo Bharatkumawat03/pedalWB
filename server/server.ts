@@ -51,7 +51,10 @@ app.use(compression());
 app.use(morgan('combined'));
 app.use(cors({
   origin: [
-    process.env.FRONTEND_URL || 'http://localhost:5000', 'http://localhost:3002',
+    process.env.FRONTEND_URL || 'http://localhost:5000',
+    'http://localhost:3002',
+    'http://127.0.0.1:5000',
+    'http://127.0.0.1:3002',
     /.*\.replit\.dev$/
   ],
   credentials: true

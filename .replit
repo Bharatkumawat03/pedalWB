@@ -5,8 +5,8 @@ channel = "stable-25_05"
 
 [deployment]
 deploymentTarget = "vm"
-run = ["bash", "-c", "concurrently \"vite preview --host 0.0.0.0 --port 5000\" \"cd server && npm start\""]
-build = ["npm", "run", "build"]
+run = ["bash", "-c", "cd server && npm start & cd ../frontend && npm run preview"]
+build = ["bash", "-c", "cd frontend && npm run build && cd ../server && npm run build"]
 
 [workflows]
 runButton = "Project"

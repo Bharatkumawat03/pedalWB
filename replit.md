@@ -8,6 +8,29 @@ Cycle Hub Express is a modern e-commerce platform built specifically for cycling
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (October 2025)
+
+### Replit Environment Setup
+- Installed all dependencies for frontend, backend, and admin panel
+- Configured Vite dev servers to allow all hosts for Replit proxy compatibility
+- Fixed CORS configuration to allow both localhost and 127.0.0.1 origins
+- Fixed duplicate MongoDB schema index warnings in User, Product, Order, and Category models
+
+### API Enhancements
+- Added missing `/api/brands` endpoint to fetch all product brands
+- Added `/api/products/:id/reviews` endpoint for product reviews with pagination
+- Added `/api/orders/:id/tracking` endpoint for order tracking information
+- Fixed wishlist `/wishlist/:productId/move-to-cart` endpoint path consistency
+
+### Admin API Structure
+The admin routes (`/api/admin/*`) provide enhanced functionality beyond basic CRUD:
+- Bulk operations for products (bulk update, bulk delete)
+- Analytics endpoints for dashboard, orders, users, and categories
+- Export functionality for orders and users
+- Additional admin-specific features (suspend/activate users, payment status management)
+
+This separation is intentional and provides a clean architecture for admin features.
+
 ## System Architecture
 
 ### Frontend Architecture

@@ -19,6 +19,9 @@ import cartRoutes from './routes/cart';
 import wishlistRoutes from './routes/wishlist';
 import orderRoutes from './routes/orders';
 import categoryRoutes from './routes/categories';
+import careersRoutes from './routes/careers';
+import contactRoutes from './routes/contact';
+import newsletterRoutes from './routes/newsletter';
 
 // Import admin routes
 import adminAuthRoutes from './routes/admin/auth';
@@ -73,6 +76,9 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/careers', careersRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/newsletter', newsletterRoutes);
 
 // Brands endpoint
 app.get('/api/brands', async (req: Request, res: Response) => {

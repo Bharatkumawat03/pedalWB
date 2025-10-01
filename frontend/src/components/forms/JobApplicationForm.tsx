@@ -5,6 +5,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { X, Upload, FileText } from 'lucide-react';
+import { careersService } from '@/services/careersService';
+import { useToast } from '@/hooks/use-toast';
 
 interface JobApplicationFormProps {
   position: {
@@ -33,13 +35,47 @@ const JobApplicationForm = ({ position, onClose }: JobApplicationFormProps) => {
   });
 
   const [resume, setResume] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log('Application submitted:', formData, resume);
-    alert('Application submitted successfully! We will get back to you within 48 hours.');
-    onClose();
+    
+    if (!resume) {
+      toast({
+        title: "Resume Required",
+        description: "Please upload your resume to continue.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await careersService.submitApplication({
+        positionTitle: position.title,
+        positionDepartment: position.department,
+        positionLocation: position.location,
+        ...formData,
+        resume
+      });
+
+      toast({
+        title: "Success!",
+        description: "Application submitted successfully! We will get back to you within 48 hours."
+      });
+
+      onClose();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to submit application. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -234,11 +270,11 @@ const JobApplicationForm = ({ position, onClose }: JobApplicationFormProps) => {
 
             {/* Submit Button */}
             <div className="flex justify-end space-x-4">
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-primary hover:bg-primary/90">
-                Submit Application
+              <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={isSubmitting}>
+                {isSubmitting ? 'Submitting...' : 'Submit Application'}
               </Button>
             </div>
           </form>

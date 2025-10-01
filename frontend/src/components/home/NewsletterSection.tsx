@@ -5,14 +5,17 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Mail, Gift, Bell, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { newsletterService } from '@/services/newsletterService';
 
 const NewsletterSection = () => {
   const [email, setEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!email) {
       toast({
         title: "Email required",
@@ -22,16 +25,29 @@ const NewsletterSection = () => {
       return;
     }
 
-    // Simulate subscription
-    setIsSubscribed(true);
-    setEmail('');
-    toast({
-      title: "Successfully subscribed!",
-      description: "Welcome to the PedalWare community. Check your inbox for a welcome gift!",
-    });
+    setIsSubmitting(true);
 
-    // Reset after 3 seconds for demo
-    setTimeout(() => setIsSubscribed(false), 3000);
+    try {
+      const response = await newsletterService.subscribe(email);
+
+      setIsSubscribed(true);
+      setEmail('');
+      
+      toast({
+        title: "Successfully subscribed!",
+        description: response.message || "Welcome to the PedalBharat community. Check your inbox for a welcome gift!",
+      });
+
+      setTimeout(() => setIsSubscribed(false), 3000);
+    } catch (error: any) {
+      toast({
+        title: "Subscription Failed",
+        description: error.response?.data?.message || "Failed to subscribe. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const benefits = [
@@ -101,8 +117,9 @@ const NewsletterSection = () => {
                       <Button 
                         type="submit"
                         className="bg-primary hover:bg-primary/90 px-8"
+                        disabled={isSubmitting}
                       >
-                        Subscribe
+                        {isSubmitting ? 'Subscribing...' : 'Subscribe'}
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground text-center">

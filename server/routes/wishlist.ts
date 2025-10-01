@@ -20,6 +20,47 @@ router.delete('/:itemId', removeFromWishlist);
 router.delete('/product/:productId', removeFromWishlistByProduct);
 router.delete('/', clearWishlist);
 router.post('/:itemId/move-to-cart', moveToCart);
+router.post('/:productId/move-to-cart', async (req, res, next) => {
+  try {
+    const { quantity = 1, selectedColor, selectedSize } = req.body;
+    const User = require('../models/User').default;
+    const Product = require('../models/Product').default;
+    
+    const user = await User.findById((req as any).user?.id);
+    const product = await Product.findById(req.params.productId);
+    
+    if (!product) {
+      res.status(404).json({ success: false, message: 'Product not found' });
+      return;
+    }
+    
+    // Add to cart
+    const existingCartItem = user.cart.find(
+      (item: any) => item.product.toString() === req.params.productId
+    );
+    
+    if (existingCartItem) {
+      existingCartItem.quantity += quantity;
+    } else {
+      user.cart.push({
+        product: req.params.productId,
+        quantity,
+        selectedColor,
+        selectedSize
+      });
+    }
+    
+    // Remove from wishlist
+    user.wishlist = user.wishlist.filter(
+      (item: any) => item.product.toString() !== req.params.productId
+    );
+    
+    await user.save();
+    res.json({ success: true, message: 'Moved to cart successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Additional endpoints for frontend compatibility
 router.post('/toggle', async (req, res, next): Promise<void> => {

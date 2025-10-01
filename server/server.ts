@@ -74,6 +74,23 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/categories', categoryRoutes);
 
+// Brands endpoint
+app.get('/api/brands', async (req: Request, res: Response) => {
+  try {
+    const Product = require('./models/Product').default;
+    const brands = await Product.distinct('brand');
+    const brandsWithCount = await Promise.all(
+      brands.map(async (brand: string) => {
+        const count = await Product.countDocuments({ brand });
+        return { name: brand, productCount: count };
+      })
+    );
+    res.json({ success: true, data: brandsWithCount });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // Admin API Routes
 app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/admin/dashboard', adminDashboardRoutes);

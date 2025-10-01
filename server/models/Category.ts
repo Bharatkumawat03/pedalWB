@@ -72,8 +72,7 @@ const categorySchema = new Schema<ICategory>({
   toObject: { virtuals: true }
 });
 
-// Indexes
-categorySchema.index({ slug: 1 });
+// Indexes (slug index is automatic due to unique: true)
 categorySchema.index({ parent: 1 });
 categorySchema.index({ status: 1 });
 

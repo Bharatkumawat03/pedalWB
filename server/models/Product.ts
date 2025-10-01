@@ -183,8 +183,7 @@ const productSchema = new Schema<IProduct>({
   toObject: { virtuals: true }
 });
 
-// Indexes
-productSchema.index({ slug: 1 });
+// Indexes (slug index is automatic due to unique: true)
 productSchema.index({ category: 1 });
 productSchema.index({ brand: 1 });
 productSchema.index({ status: 1 });

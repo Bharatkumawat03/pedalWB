@@ -1,120 +1,73 @@
-# PedalBharat Admin Panel
+# Welcome to your Lovable project
 
-A comprehensive admin panel for managing the PedalBharat e-commerce platform.
+## Project info
 
-## Features
+**URL**: https://lovable.dev/projects/28813086-3ba9-421b-a23e-251e744bd720
 
-- **Dashboard Analytics** - Overview of sales, users, orders, and products
-- **Product Management** - CRUD operations for products with image upload
-- **Order Management** - Track and manage customer orders
-- **User Management** - Manage customer accounts and permissions
-- **Category Management** - Organize products into categories
-- **Analytics & Reports** - Detailed insights and reporting
+## How can I edit this code?
 
-## Tech Stack
+There are several ways of editing your application.
 
-- **Frontend**: React 18, TypeScript, Vite
-- **Styling**: Tailwind CSS, shadcn/ui components
-- **State Management**: Redux Toolkit
-- **Routing**: React Router DOM
-- **HTTP Client**: Axios
-- **Icons**: Lucide React
+**Use Lovable**
 
-## Getting Started
+Simply visit the [Lovable Project](https://lovable.dev/projects/28813086-3ba9-421b-a23e-251e744bd720) and start prompting.
 
-### Prerequisites
+Changes made via Lovable will be committed automatically to this repo.
 
-- Node.js 18+ 
-- MongoDB
-- Backend server running
+**Use your preferred IDE**
 
-### Installation
+If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
 
-1. Install dependencies:
-```bash
-npm install
-```
+The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-2. Start the development server:
-```bash
+Follow these steps:
+
+```sh
+# Step 1: Clone the repository using the project's Git URL.
+git clone <YOUR_GIT_URL>
+
+# Step 2: Navigate to the project directory.
+cd <YOUR_PROJECT_NAME>
+
+# Step 3: Install the necessary dependencies.
+npm i
+
+# Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
 
-3. Open [http://localhost:5173](http://localhost:5173) in your browser
+**Edit a file directly in GitHub**
 
-### Admin Login
+- Navigate to the desired file(s).
+- Click the "Edit" button (pencil icon) at the top right of the file view.
+- Make your changes and commit the changes.
 
-Default admin credentials:
-- **Email**: admin@pedalbharat.com
-- **Password**: admin123
+**Use GitHub Codespaces**
 
-## Project Structure
+- Navigate to the main page of your repository.
+- Click on the "Code" button (green button) near the top right.
+- Select the "Codespaces" tab.
+- Click on "New codespace" to launch a new Codespace environment.
+- Edit files directly within the Codespace and commit and push your changes once you're done.
 
-```
-admin-panel/
-├── src/
-│   ├── components/          # Reusable UI components
-│   │   ├── layout/         # Layout components (Header, Sidebar)
-│   │   └── ui/             # Basic UI components
-│   ├── pages/              # Page components
-│   │   ├── dashboard/      # Dashboard pages
-│   │   ├── products/       # Product management
-│   │   ├── orders/         # Order management
-│   │   ├── users/          # User management
-│   │   └── categories/     # Category management
-│   ├── services/           # API service functions
-│   ├── store/              # Redux store and slices
-│   ├── types/              # TypeScript type definitions
-│   └── lib/                # Utility functions
-├── public/                 # Static assets
-└── dist/                   # Build output
-```
+## What technologies are used for this project?
 
-## API Endpoints
+This project is built with:
 
-The admin panel connects to the following backend endpoints:
+- Vite
+- TypeScript
+- React
+- shadcn-ui
+- Tailwind CSS
 
-- `/api/admin/auth/*` - Authentication
-- `/api/admin/dashboard/*` - Dashboard analytics
-- `/api/admin/products/*` - Product management
-- `/api/admin/orders/*` - Order management
-- `/api/admin/users/*` - User management
-- `/api/admin/categories/*` - Category management
+## How can I deploy this project?
 
-## Development
+Simply open [Lovable](https://lovable.dev/projects/28813086-3ba9-421b-a23e-251e744bd720) and click on Share -> Publish.
 
-### Available Scripts
+## Can I connect a custom domain to my Lovable project?
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
+Yes, you can!
 
-### Environment Variables
+To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
-Create a `.env` file in the root directory:
-
-```env
-VITE_API_URL=http://localhost:3001/api
-```
-
-## Deployment
-
-1. Build the project:
-```bash
-npm run build
-```
-
-2. The `dist` folder contains the production build
-3. Deploy the contents to your web server
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## License
-
-This project is part of the PedalBharat e-commerce platform.
+Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)

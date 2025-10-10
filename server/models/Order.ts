@@ -156,9 +156,8 @@ const orderSchema = new Schema<IOrder>({
   toObject: { virtuals: true }
 });
 
-// Indexes
+// Indexes (orderNumber index is automatic due to unique: true)
 orderSchema.index({ user: 1 });
-orderSchema.index({ orderNumber: 1 });
 orderSchema.index({ orderStatus: 1 });
 orderSchema.index({ paymentStatus: 1 });
 orderSchema.index({ createdAt: -1 });

@@ -289,8 +289,7 @@ const userSchema = new Schema<IUser>({
   toObject: { virtuals: true }
 });
 
-// Indexes
-userSchema.index({ email: 1 });
+// Indexes (email index is automatic due to unique: true)
 userSchema.index({ role: 1 });
 userSchema.index({ status: 1 });
 

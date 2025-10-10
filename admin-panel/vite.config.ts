@@ -15,17 +15,8 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-<<<<<<< HEAD
-}));
-=======
-  server: {
-    port: 3002,
-    host: '0.0.0.0',
-    allowedHosts: true,
-  },
   build: {
     outDir: 'dist',
     sourcemap: true,
   },
-})
->>>>>>> a8c770ff95ccb4de8d414e004b78cebd65617eb5
+}));

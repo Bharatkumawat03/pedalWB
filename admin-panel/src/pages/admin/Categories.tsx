@@ -10,14 +10,15 @@ import { CategoryProductsDialog } from "@/components/admin/CategoryProductsDialo
 import { PaginationControls } from "@/components/admin/PaginationControls";
 import { TableSkeleton } from "@/components/admin/TableSkeleton";
 import { StatsCard } from "@/components/admin/StatsCard";
-import { useAdminData } from "@/hooks/useAdminData";
+import { useCategories } from "@/hooks/useCategories";
 import { useDebounce } from "@/hooks/useDebounce";
-import { usePagination } from "@/hooks/usePagination";
 import { useToast } from "@/hooks/use-toast";
 import { FolderOpen, Package, TrendingUp, CheckCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 export default function AdminCategories() {
+  console.log('AdminCategories component rendering');
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [minProducts, setMinProducts] = useState("");
@@ -34,13 +35,16 @@ export default function AdminCategories() {
 
   const {
     categories,
-    products,
     loading,
+    currentPage,
+    totalPages,
+    totalCategories,
+    fetchCategories,
     createCategory,
     updateCategory,
     deleteCategory,
-    searchCategories
-  } = useAdminData();
+    toggleCategoryStatus,
+  } = useCategories();
   
   const { toast } = useToast();
 
@@ -49,15 +53,15 @@ export default function AdminCategories() {
 
   // Calculate stats
   const stats = useMemo(() => {
-    const totalCategories = categories.length;
-    const activeCategories = categories.filter(c => c.status === 'Active').length;
-    const totalProducts = categories.reduce((sum, c) => sum + c.productCount, 0);
-    const avgProductsPerCategory = totalCategories > 0 ? totalProducts / totalCategories : 0;
-    const emptyCategories = categories.filter(c => c.productCount === 0).length;
-    const activeRate = totalCategories > 0 ? (activeCategories / totalCategories) * 100 : 0;
+    const totalCategoriesCount = categories.length;
+    const activeCategories = categories.filter(c => c.isActive !== false).length;
+    const totalProducts = categories.reduce((sum, c) => sum + (c.productCount || 0), 0);
+    const avgProductsPerCategory = totalCategoriesCount > 0 ? totalProducts / totalCategoriesCount : 0;
+    const emptyCategories = categories.filter(c => (c.productCount || 0) === 0).length;
+    const activeRate = totalCategoriesCount > 0 ? (activeCategories / totalCategoriesCount) * 100 : 0;
     
     return {
-      totalCategories,
+      totalCategories: totalCategoriesCount,
       activeCategories,
       totalProducts,
       avgProductsPerCategory,
@@ -68,17 +72,29 @@ export default function AdminCategories() {
 
   // Filtered and sorted categories
   const filteredCategories = useMemo(() => {
-    let result = searchCategories(debouncedSearch);
+    let result = [...categories];
+
+    // Search filter
+    if (debouncedSearch) {
+      result = result.filter(cat => 
+        cat.name?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        cat.description?.toLowerCase().includes(debouncedSearch.toLowerCase())
+      );
+    }
 
     // Status filter
     if (selectedStatus !== 'all') {
-      result = result.filter(cat => cat.status === selectedStatus);
+      if (selectedStatus === 'Active') {
+        result = result.filter(cat => cat.isActive !== false);
+      } else {
+        result = result.filter(cat => cat.isActive === false);
+      }
     }
 
     // Products range filter
     if (minProducts || maxProducts) {
       result = result.filter(cat => {
-        const count = cat.productCount;
+        const count = cat.productCount || 0;
         if (minProducts && count < parseInt(minProducts)) return false;
         if (maxProducts && count > parseInt(maxProducts)) return false;
         return true;
@@ -91,8 +107,8 @@ export default function AdminCategories() {
       let bValue = b[sortField];
 
       if (sortField === 'productCount') {
-        aValue = parseInt(aValue);
-        bValue = parseInt(bValue);
+        aValue = parseInt(aValue) || 0;
+        bValue = parseInt(bValue) || 0;
       } else if (typeof aValue === 'string') {
         aValue = aValue.toLowerCase();
         bValue = bValue.toLowerCase();
@@ -104,40 +120,66 @@ export default function AdminCategories() {
     });
 
     return result;
-  }, [debouncedSearch, selectedStatus, minProducts, maxProducts, sortField, sortDirection, searchCategories]);
+  }, [debouncedSearch, selectedStatus, minProducts, maxProducts, sortField, sortDirection, categories]);
 
   // Pagination
-  const {
-    paginatedItems: paginatedCategories,
-    currentPage,
-    totalPages,
-    startIndex,
-    endIndex,
-    totalItems,
-    goToPage,
-    resetPage
-  } = usePagination(filteredCategories, itemsPerPage);
+  const paginatedCategories = filteredCategories.slice(0, itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage + 1;
+  const endIndex = Math.min(currentPage * itemsPerPage, filteredCategories.length);
+  const totalItems = filteredCategories.length;
+  
+  const goToPage = (page: number) => {
+    fetchCategories(page, itemsPerPage);
+  };
 
-  // Reset to page 1 when filters change
+  // Refetch when filters change
   useEffect(() => {
-    resetPage();
-  }, [debouncedSearch, selectedStatus, minProducts, maxProducts, resetPage]);
+    fetchCategories(1, itemsPerPage);
+  }, [debouncedSearch, selectedStatus, minProducts, maxProducts]);
 
   const handleCreateCategory = async (data: any) => {
-    await createCategory(data);
+    try {
+      // Ensure icon and isActive are included
+      const categoryData = {
+        ...data,
+        icon: data.icon || '🏷️',
+        isActive: data.isActive !== undefined ? data.isActive : true
+      };
+      await createCategory(categoryData);
+      setCategoryFormOpen(false);
+    } catch (error) {
+      // Error handled in hook
+    }
   };
 
   const handleUpdateCategory = async (data: any) => {
     if (editingCategory) {
-      await updateCategory(editingCategory.id, data);
-      setEditingCategory(null);
+      try {
+        const categoryId = editingCategory._id || editingCategory.id;
+        // Ensure icon and isActive are included
+        const categoryData = {
+          ...data,
+          icon: data.icon !== undefined ? data.icon : editingCategory.icon || '🏷️',
+          isActive: data.isActive !== undefined ? data.isActive : (editingCategory.status === 'active' || editingCategory.isActive)
+        };
+        await updateCategory(categoryId, categoryData);
+        setEditingCategory(null);
+        setCategoryFormOpen(false);
+      } catch (error) {
+        // Error handled in hook
+      }
     }
   };
 
   const handleDeleteCategory = async () => {
     if (categoryToDelete) {
-      await deleteCategory(categoryToDelete);
-      setCategoryToDelete(null);
+      try {
+        await deleteCategory(categoryToDelete);
+        setCategoryToDelete(null);
+        setDeleteDialogOpen(false);
+      } catch (error) {
+        // Error handled in hook
+      }
     }
   };
 
@@ -146,7 +188,8 @@ export default function AdminCategories() {
     setCategoryFormOpen(true);
   };
 
-  const openDeleteDialog = (categoryId: string) => {
+  const openDeleteDialog = (category: any) => {
+    const categoryId = category._id || category.id;
     setCategoryToDelete(categoryId);
     setDeleteDialogOpen(true);
   };
@@ -156,7 +199,8 @@ export default function AdminCategories() {
     setViewProductsDialog(true);
   };
 
-  const toggleCategoryStatus = async (categoryId: string, currentStatus: string) => {
+  const handleToggleStatus = async (category: any, currentStatus: string) => {
+    const categoryId = category._id || category.id;
     const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
     try {
       await updateCategory(categoryId, { status: newStatus });
@@ -294,7 +338,7 @@ export default function AdminCategories() {
               onViewProducts={openViewProducts}
               onEditCategory={openEditForm}
               onDeleteCategory={openDeleteDialog}
-              onToggleStatus={toggleCategoryStatus}
+              onToggleStatus={handleToggleStatus}
               sortField={sortField}
               sortDirection={sortDirection}
               onSort={handleSort}

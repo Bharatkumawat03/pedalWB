@@ -30,7 +30,7 @@ const Refund = () => {
 
   return (
     <div className="min-h-screen bg-background py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="text-center mb-12">
           <Badge variant="outline" className="mb-4">Refund Policy</Badge>

@@ -23,7 +23,10 @@ export const getWishlist = async (req: AuthenticatedRequest, res: Response, next
 
     res.status(200).json({
       success: true,
-      data: user.wishlist
+      data: {
+        items: user.wishlist,
+        count: user.wishlist.length
+      }
     });
   } catch (error) {
     next(error);
@@ -86,7 +89,10 @@ export const addToWishlist = async (req: AuthenticatedRequest, res: Response, ne
     res.status(200).json({
       success: true,
       message: 'Item added to wishlist successfully',
-      data: user.wishlist
+      data: {
+        items: user.wishlist,
+        count: user.wishlist.length
+      }
     });
   } catch (error) {
     next(error);
@@ -128,7 +134,10 @@ export const removeFromWishlist = async (req: AuthenticatedRequest, res: Respons
     res.status(200).json({
       success: true,
       message: 'Item removed from wishlist successfully',
-      data: user.wishlist
+      data: {
+        items: user.wishlist,
+        count: user.wishlist.length
+      }
     });
   } catch (error) {
     next(error);
@@ -176,7 +185,10 @@ export const removeFromWishlistByProduct = async (req: AuthenticatedRequest, res
     res.status(200).json({
       success: true,
       message: 'Item removed from wishlist successfully',
-      data: user.wishlist
+      data: {
+        items: user.wishlist,
+        count: user.wishlist.length
+      }
     });
   } catch (error) {
     next(error);
@@ -203,7 +215,10 @@ export const clearWishlist = async (req: AuthenticatedRequest, res: Response, ne
     res.status(200).json({
       success: true,
       message: 'Wishlist cleared successfully',
-      data: user.wishlist
+      data: {
+        items: [],
+        count: 0
+      }
     });
   } catch (error) {
     next(error);
@@ -245,7 +260,11 @@ export const moveToCart = async (req: AuthenticatedRequest, res: Response, next:
       return;
     }
 
-    if (!product.inventory.inStock || product.inventory.quantity < quantity) {
+    const isInStock = product.isInStock !== false && 
+                     (product.inventory?.inStock !== false);
+    const availableQuantity = product.inventory?.quantity || 0;
+    
+    if (!isInStock || availableQuantity < quantity) {
       res.status(400).json({
         success: false,
         message: 'Product is out of stock'

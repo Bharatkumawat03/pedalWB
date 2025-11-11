@@ -21,15 +21,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 
 const categorySchema = z.object({
   name: z.string().min(1, "Category name is required"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters").optional(),
+  icon: z.string().optional(),
+  isActive: z.boolean().default(true),
   image: z.object({
-    url: z.string().url("Please enter a valid image URL"),
-    altText: z.string().min(1, "Alt text is required")
-  })
+    url: z.string().url("Please enter a valid image URL").optional(),
+    altText: z.string().optional()
+  }).optional()
 });
 
 type CategoryFormData = z.infer<typeof categorySchema>;
@@ -48,11 +51,13 @@ export function CategoryForm({ open, onOpenChange, category, onSubmit, loading }
   const form = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
-      name: category?.name || "",
-      description: category?.description || "",
+      name: "",
+      description: "",
+      icon: "🏷️",
+      isActive: true,
       image: {
-        url: category?.image?.url || "",
-        altText: category?.image?.altText || ""
+        url: "",
+        altText: ""
       }
     }
   });
@@ -60,18 +65,25 @@ export function CategoryForm({ open, onOpenChange, category, onSubmit, loading }
   // Reset form when category changes
   React.useEffect(() => {
     if (category) {
+      // Determine isActive from status field
+      const isActive = category.status === 'active' || category.isActive === true || category.isActive === undefined;
+      
       form.reset({
-        name: category.name,
-        description: category.description,
+        name: category.name || "",
+        description: category.description || "",
+        icon: category.icon || "🏷️",
+        isActive: isActive,
         image: {
-          url: category.image.url,
-          altText: category.image.altText
+          url: category.image?.url || "",
+          altText: category.image?.altText || ""
         }
       });
     } else {
       form.reset({
         name: "",
         description: "",
+        icon: "🏷️",
+        isActive: true,
         image: {
           url: "",
           altText: ""
@@ -166,6 +178,33 @@ export function CategoryForm({ open, onOpenChange, category, onSubmit, loading }
                     <Input placeholder="Describe the image" {...field} />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="icon"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Icon</FormLabel>
+                  <FormControl>
+                    <Input placeholder="🏷️" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="isActive"
+              render={({ field }) => (
+                <FormItem className="flex items-center space-x-2 space-y-0">
+                  <FormControl>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </FormControl>
+                  <FormLabel>Active Status</FormLabel>
                 </FormItem>
               )}
             />

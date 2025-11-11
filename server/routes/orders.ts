@@ -7,16 +7,18 @@ import {
   updateOrderStatus,
   cancelOrder
 } from '../controllers/orderController';
-import { protect, authorize } from '../middleware/auth';
+import { protect, authorize, optionalAuth } from '../middleware/auth';
 
 const router = express.Router();
 
-// All order routes require authentication
+// Guest checkout - allow optional authentication
+router.post('/', optionalAuth, createOrder);
+
+// All other order routes require authentication
 router.use(protect);
 
 // User order routes
 router.get('/my-orders', getUserOrders);
-router.post('/', createOrder);
 router.get('/:id', getOrder);
 router.put('/:id/cancel', cancelOrder);
 router.get('/:id/tracking', async (req, res, next) => {

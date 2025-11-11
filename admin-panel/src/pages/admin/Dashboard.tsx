@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
-import { useAdminData } from "@/hooks/useAdminData";
+import { useDashboard } from "@/hooks/useDashboard";
 import { 
   Package, 
   Users, 
@@ -53,80 +53,61 @@ import {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { products, users, orders } = useAdminData();
+  const { stats, analytics, loading } = useDashboard();
 
-  // Calculate comprehensive stats
-  const totalProducts = products.length;
-  const totalUsers = users.length;
-  const totalOrders = orders.length;
-  const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
-  
-  const activeProducts = products.filter(p => p.status === 'Active').length;
-  const lowStockProducts = products.filter(p => p.stock < 5 && p.stock > 0).length;
-  const outOfStockProducts = products.filter(p => p.stock === 0).length;
-  
-  const pendingOrders = orders.filter(o => o.status === 'Pending').length;
-  const processingOrders = orders.filter(o => o.status === 'Processing').length;
-  const completedOrders = orders.filter(o => o.status === 'Completed').length;
-  const cancelledOrders = orders.filter(o => o.status === 'Cancelled').length;
-  const shippedOrders = orders.filter(o => o.status === 'Shipped').length;
+  // Extract stats from API response
+  const totalUsers = stats?.totalUsers || 0;
+  const totalProducts = stats?.totalProducts || 0;
+  const totalOrders = stats?.totalOrders || 0;
+  const totalRevenue = stats?.totalRevenue || 0;
+  const recentOrders = stats?.recentOrders || [];
+  const topProducts = stats?.topProducts || [];
 
-  // Advanced metrics
+  // Calculate additional metrics
   const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-  const conversionRate = 12.4; // Mock conversion rate
-  const activeUsers = users.filter(u => u.status === 'Active').length;
-  const newUsersThisMonth = Math.floor(totalUsers * 0.15);
+  const monthlyRevenue = stats?.monthlyRevenue || [];
+  const userGrowth = stats?.userGrowth || [];
 
-  // Revenue chart data (last 7 days)
-  const revenueData = [
-    { day: 'Mon', revenue: 12500, orders: 45 },
-    { day: 'Tue', revenue: 15800, orders: 52 },
-    { day: 'Wed', revenue: 14200, orders: 48 },
-    { day: 'Thu', revenue: 18900, orders: 61 },
-    { day: 'Fri', revenue: 22400, orders: 73 },
-    { day: 'Sat', revenue: 19800, orders: 65 },
-    { day: 'Sun', revenue: 17200, orders: 58 }
-  ];
-
-  // Order status distribution
+  // Order status distribution (from analytics or calculated)
   const orderStatusData = [
-    { name: 'Completed', value: completedOrders, color: 'hsl(var(--success))' },
-    { name: 'Processing', value: processingOrders, color: 'hsl(var(--warning))' },
-    { name: 'Pending', value: pendingOrders, color: 'hsl(var(--info))' },
-    { name: 'Shipped', value: shippedOrders, color: 'hsl(var(--primary))' },
-    { name: 'Cancelled', value: cancelledOrders, color: 'hsl(var(--destructive))' }
+    { name: 'Completed', value: stats?.completedOrders || 0, color: 'hsl(var(--success))' },
+    { name: 'Processing', value: stats?.processingOrders || 0, color: 'hsl(var(--warning))' },
+    { name: 'Pending', value: stats?.pendingOrders || 0, color: 'hsl(var(--info))' },
+    { name: 'Shipped', value: stats?.shippedOrders || 0, color: 'hsl(var(--primary))' },
+    { name: 'Cancelled', value: stats?.cancelledOrders || 0, color: 'hsl(var(--destructive))' }
   ].filter(item => item.value > 0);
 
-  // Top products
-  const topProducts = products.slice(0, 5).map(p => ({
-    name: p.name,
-    sales: Math.floor(Math.random() * 500) + 100,
-    revenue: Math.floor(Math.random() * 50000) + 10000
+  // Revenue chart data from monthly revenue
+  const revenueData = monthlyRevenue.map((item: any, index: number) => ({
+    day: item.month || `Day ${index + 1}`,
+    revenue: item.revenue || 0,
+    orders: Math.floor(item.revenue / 1000) || 0
   }));
 
-  // Recent activity timeline
+  // Calculate product stats
+  const activeProducts = stats?.activeProducts || 0;
+  const lowStockProducts = stats?.lowStockProducts || 0;
+  const outOfStockProducts = stats?.outOfStockProducts || 0;
+
+  // Recent activity timeline (mock data for now)
   const recentActivity = [
-    { id: 1, type: 'order', message: 'New order #12345 received', time: '2 minutes ago', icon: ShoppingCart },
-    { id: 2, type: 'user', message: 'New user registration: John Doe', time: '15 minutes ago', icon: Users },
-    { id: 3, type: 'product', message: 'Product "Mountain Bike" stock low', time: '1 hour ago', icon: AlertTriangle },
-    { id: 4, type: 'order', message: 'Order #12340 shipped', time: '2 hours ago', icon: Package },
-    { id: 5, type: 'payment', message: 'Payment received: ₹25,000', time: '3 hours ago', icon: DollarSign },
-    { id: 6, type: 'user', message: '5 new user registrations', time: '4 hours ago', icon: Users },
+    { id: 1, type: 'order', message: 'New order received', time: '2 minutes ago', icon: ShoppingCart },
+    { id: 2, type: 'user', message: 'New user registration', time: '15 minutes ago', icon: Users },
+    { id: 3, type: 'product', message: 'Product stock low', time: '1 hour ago', icon: AlertTriangle },
+    { id: 4, type: 'order', message: 'Order shipped', time: '2 hours ago', icon: Package },
+    { id: 5, type: 'payment', message: 'Payment received', time: '3 hours ago', icon: DollarSign },
+    { id: 6, type: 'user', message: 'New user registrations', time: '4 hours ago', icon: Users },
   ];
 
   // System alerts
   const alerts = [
     { id: 1, type: 'warning', message: `${lowStockProducts} products are low in stock`, action: 'View Inventory' },
     { id: 2, type: 'error', message: `${outOfStockProducts} products are out of stock`, action: 'Restock Now' },
-    { id: 3, type: 'info', message: `${pendingOrders} orders pending review`, action: 'Review Orders' },
+    { id: 3, type: 'info', message: `${stats?.pendingOrders || 0} orders pending review`, action: 'Review Orders' },
   ].filter(alert => {
-    if (alert.type === 'warning' && lowStockProducts === 0) return false;
-    if (alert.type === 'error' && outOfStockProducts === 0) return false;
-    if (alert.type === 'info' && pendingOrders === 0) return false;
-    return true;
+    const value = parseInt(alert.message.match(/\d+/)?.[0] || '0');
+    return value > 0;
   });
-
-  const recentOrders = orders.slice(-5).reverse();
 
   return (
     <AdminLayout title="Dashboard">
@@ -167,7 +148,7 @@ export default function AdminDashboard() {
             change="+12.5%"
             changeType="positive"
             icon={Package}
-            description={`${activeProducts} active products`}
+            description={`${stats?.activeProducts || 0} active products`}
           />
         </div>
         <div onClick={() => navigate('/admin/users')} className="cursor-pointer">
@@ -177,7 +158,7 @@ export default function AdminDashboard() {
             change="+18.2%"
             changeType="positive"
             icon={Users}
-            description={`${activeUsers} active users`}
+            description={`${stats?.activeUsers || 0} active users`}
           />
         </div>
         <div onClick={() => navigate('/admin/orders')} className="cursor-pointer">
@@ -187,7 +168,7 @@ export default function AdminDashboard() {
             change="+8.7%"
             changeType="positive"
             icon={ShoppingCart}
-            description={`${completedOrders} completed`}
+            description={`${stats?.completedOrders || 0} completed`}
           />
         </div>
         <div onClick={() => navigate('/admin/settings')} className="cursor-pointer">
@@ -225,7 +206,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Conversion Rate</p>
-                <p className="text-2xl font-bold">{conversionRate}%</p>
+                <p className="text-2xl font-bold">{stats?.conversionRate || 0}%</p>
                 <p className="text-xs text-success flex items-center gap-1 mt-1">
                   <ArrowUpRight className="h-3 w-3" />
                   +2.4% vs last week
@@ -241,7 +222,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">New Users</p>
-                <p className="text-2xl font-bold">{newUsersThisMonth}</p>
+                <p className="text-2xl font-bold">{stats?.newUsersThisMonth || 0}</p>
                 <p className="text-xs text-muted-foreground mt-1">This month</p>
               </div>
               <Users className="h-10 w-10 text-primary/20" />
@@ -254,7 +235,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Pending Orders</p>
-                <p className="text-2xl font-bold">{pendingOrders}</p>
+                <p className="text-2xl font-bold">{stats?.pendingOrders || 0}</p>
                 <p className="text-xs text-warning flex items-center gap-1 mt-1">
                   <Clock className="h-3 w-3" />
                   Needs attention

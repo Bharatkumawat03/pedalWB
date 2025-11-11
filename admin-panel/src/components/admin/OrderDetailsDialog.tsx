@@ -152,15 +152,15 @@ export function OrderDetailsDialog({
             <div className="space-y-4">
               <h3 className="font-semibold flex items-center gap-2">
                 <img
-                  src={order.customer.avatar}
-                  alt={order.customer.name}
+                  src={order.customer?.avatar}
+                  alt={order.customer?.name}
                   className="h-8 w-8 rounded-full"
                 />
                 Customer Information
               </h3>
               <div className="space-y-2 text-sm">
-                <p><strong>Name:</strong> {order.customer.name}</p>
-                <p><strong>Email:</strong> {order.customer.email}</p>
+                <p><strong>Name:</strong> {order.customer?.name}</p>
+                <p><strong>Email:</strong> {order.customer?.email}</p>
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
                   <span className="text-muted-foreground">Shipping Address:</span>
@@ -175,9 +175,9 @@ export function OrderDetailsDialog({
                 Order Timeline
               </h3>
               <div className="space-y-2 text-sm">
-                <p><strong>Order Date:</strong> {new Date(order.orderDate).toLocaleString()}</p>
+                <p><strong>Order Date:</strong> {new Date(order.orderDate)?.toLocaleString()}</p>
                 {order.deliveryDate && (
-                  <p><strong>Delivered:</strong> {new Date(order.deliveryDate).toLocaleString()}</p>
+                  <p><strong>Delivered:</strong> {new Date(order.deliveryDate)?.toLocaleString()}</p>
                 )}
                 {order.trackingNumber && (
                   <div className="flex items-center gap-2">
@@ -207,13 +207,13 @@ export function OrderDetailsDialog({
               {order.items.map((item: any, index: number) => (
                 <div key={index} className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
                   <div>
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
+                    <p className="font-medium">{item?.name}</p>
+                    <p className="text-sm text-muted-foreground">Quantity: {item?.quantity}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">₹{item.price.toLocaleString()}</p>
+                    <p className="font-medium">₹{item?.price?.toLocaleString()}</p>
                     <p className="text-sm text-muted-foreground">
-                      ₹{(item.price * item.quantity).toLocaleString()}
+                      ₹{(item?.price * item?.quantity)?.toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -224,7 +224,7 @@ export function OrderDetailsDialog({
             
             <div className="flex justify-between items-center text-lg font-semibold">
               <span>Total Amount:</span>
-              <span>₹{order.total.toLocaleString()}</span>
+              <span>₹{order.total?.toLocaleString()}</span>
             </div>
           </div>
         </div>

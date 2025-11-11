@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/store/store';
-import { registerUser } from '@/store/slices/authSlice';
+import { registerUser, googleAuth } from '@/store/slices/authSlice';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,8 +10,15 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
 import { Eye, EyeOff, Loader2, ArrowLeft, CheckCircle } from 'lucide-react';
 import pedalBharatLogo from '@/assets/pedalbharat-logo.png';
+
+declare global {
+  interface Window {
+    google: any;
+  }
+}
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -29,6 +36,7 @@ const Signup = () => {
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const googleButtonRef = useRef<HTMLDivElement>(null);
   
   // Safely destructure auth state with fallbacks
   const auth = useSelector((state: RootState) => state.auth);
@@ -40,6 +48,56 @@ const Signup = () => {
   if (isAuthenticated) {
     navigate('/', { replace: true });
   }
+
+  const handleGoogleResponse = useCallback(async (response: any) => {
+    try {
+      const result = await dispatch(googleAuth(response.credential));
+      
+      if (googleAuth.fulfilled.match(result)) {
+        navigate('/', { replace: true });
+      }
+    } catch (error) {
+      console.error('Google registration error:', error);
+    }
+  }, [dispatch, navigate]);
+
+  // Initialize Google Sign-In
+  useEffect(() => {
+    const initializeGoogleSignIn = () => {
+      if (window.google && googleButtonRef.current) {
+        window.google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
+          callback: handleGoogleResponse,
+        });
+
+        window.google.accounts.id.renderButton(
+          googleButtonRef.current,
+          {
+            theme: 'outline',
+            size: 'large',
+            width: '100%',
+            text: 'signup_with',
+            locale: 'en'
+          }
+        );
+      }
+    };
+
+    // Check if Google script is loaded
+    if (window.google) {
+      initializeGoogleSignIn();
+    } else {
+      // Wait for Google script to load
+      const checkGoogle = setInterval(() => {
+        if (window.google) {
+          initializeGoogleSignIn();
+          clearInterval(checkGoogle);
+        }
+      }, 100);
+
+      return () => clearInterval(checkGoogle);
+    }
+  }, [handleGoogleResponse]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -354,6 +412,19 @@ const Signup = () => {
                   'Create Account'
                 )}
               </Button>
+
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                </div>
+              </div>
+
+              {/* Google Sign Up Button */}
+              <div ref={googleButtonRef} className="w-full"></div>
             </form>
           </CardContent>
         </Card>

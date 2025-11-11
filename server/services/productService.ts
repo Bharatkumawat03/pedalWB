@@ -141,6 +141,18 @@ class ProductService {
       .populate('category', 'name slug');
   }
 
+  async getBestSellers(limit: number = 8): Promise<IProduct[]> {
+    // Get products with highest ratings and in stock, sorted by rating
+    return await Product.find({ 
+      status: 'active',
+      'inventory.inStock': true,
+      'rating.count': { $gt: 0 } // Only products with reviews
+    })
+      .limit(limit)
+      .sort({ 'rating.average': -1, 'rating.count': -1 }) // Sort by rating average, then by review count
+      .populate('category', 'name slug');
+  }
+
   async getProductsByCategory(categoryId: string, limit: number = 12): Promise<IProduct[]> {
     return await Product.find({ category: categoryId, status: 'active' })
       .limit(limit)

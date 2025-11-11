@@ -42,7 +42,7 @@ class WishlistService {
 
   // Remove item from wishlist
   async removeFromWishlist(productId: string): Promise<any> {
-    return await api.delete(`/wishlist/${productId}`);
+    return await api.delete(`/wishlist/product/${productId}`);
   }
 
   // Toggle item in wishlist

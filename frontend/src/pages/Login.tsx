@@ -1,16 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/store/store';
-import { loginUser } from '@/store/slices/authSlice';
+import { loginUser, googleAuth } from '@/store/slices/authSlice';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
 import pedalBharatLogo from '@/assets/pedalbharat-logo.png';
+
+declare global {
+  interface Window {
+    google: any;
+  }
+}
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -23,6 +30,7 @@ const Login = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const location = useLocation();
+  const googleButtonRef = useRef<HTMLDivElement>(null);
   
   // Safely destructure auth state with fallbacks
   const auth = useSelector((state: RootState) => state.auth);
@@ -35,6 +43,57 @@ const Login = () => {
     const from = location.state?.from?.pathname || '/';
     navigate(from, { replace: true });
   }
+
+  const handleGoogleResponse = useCallback(async (response: any) => {
+    try {
+      const result = await dispatch(googleAuth(response.credential));
+      
+      if (googleAuth.fulfilled.match(result)) {
+        const from = location.state?.from?.pathname || '/';
+        navigate(from, { replace: true });
+      }
+    } catch (error) {
+      console.error('Google login error:', error);
+    }
+  }, [dispatch, navigate, location]);
+
+  // Initialize Google Sign-In
+  useEffect(() => {
+    const initializeGoogleSignIn = () => {
+      if (window.google && googleButtonRef.current) {
+        window.google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
+          callback: handleGoogleResponse,
+        });
+
+        window.google.accounts.id.renderButton(
+          googleButtonRef.current,
+          {
+            theme: 'outline',
+            size: 'large',
+            width: '100%',
+            text: 'signin_with',
+            locale: 'en'
+          }
+        );
+      }
+    };
+
+    // Check if Google script is loaded
+    if (window.google) {
+      initializeGoogleSignIn();
+    } else {
+      // Wait for Google script to load
+      const checkGoogle = setInterval(() => {
+        if (window.google) {
+          initializeGoogleSignIn();
+          clearInterval(checkGoogle);
+        }
+      }, 100);
+
+      return () => clearInterval(checkGoogle);
+    }
+  }, [handleGoogleResponse]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -184,6 +243,19 @@ const Login = () => {
                   'Sign In'
                 )}
               </Button>
+
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                </div>
+              </div>
+
+              {/* Google Sign In Button */}
+              <div ref={googleButtonRef} className="w-full"></div>
 
               {/* Forgot Password */}
               <div className="text-center">

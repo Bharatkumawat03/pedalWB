@@ -17,8 +17,8 @@ const FeaturedProducts = () => {
       try {
         setLoading(true);
         setError(null);
-        const products = await productService.getFeaturedProducts(8);
-        setFeaturedProducts(products || []);
+        const apiProducts = await productService.getFeaturedProducts(8);
+        setFeaturedProducts(apiProducts || []);
       } catch (err: any) {
         console.error('Error fetching featured products:', err);
         setError(err.message);
@@ -37,29 +37,28 @@ const FeaturedProducts = () => {
   const safeFeaturedProducts = Array.isArray(featuredProducts) ? featuredProducts : [];
 
   return (
-    <section className="py-20 bg-muted/30">
+    <section className="py-8 md:py-12 lg:py-14 bg-muted/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="flex items-center justify-between mb-12">
+        <div className="flex items-center justify-between mb-6 md:mb-12">
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <TrendingUp className="w-6 h-6 text-primary" />
-              <Badge variant="secondary" className="text-sm">
-                Featured
+            <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-4">
+              <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+              <Badge className="bg-primary/10 text-primary border-primary/20 text-xs md:text-sm">
+                Trending Now
               </Badge>
             </div>
-            <h2 className="text-4xl font-bold text-foreground mb-4">
+            <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-foreground mb-2 md:mb-4">
               Featured Products
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl">
-              Discover our handpicked selection of premium cycling gear, 
-              carefully curated for the ultimate riding experience.
+            <p className="text-sm md:text-lg lg:text-xl text-muted-foreground hidden md:block">
+              Handpicked gear that's making waves in the cycling community
             </p>
           </div>
-          <Link to="/shop">
-            <Button variant="outline" size="lg" className="gap-2 group">
+          <Link to="/shop" className="hidden md:block">
+            <Button variant="outline" className="border-border hover:border-primary hover:bg-primary/5">
               View All Products
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
           </Link>
         </div>
@@ -103,12 +102,13 @@ const FeaturedProducts = () => {
           </div>
         )}
 
-        {/* Call to Action */}
+        {/* Call to Action (Mobile/Below md) */}
         {!loading && safeFeaturedProducts.length > 0 && (
-          <div className="text-center">
+          <div className="text-center md:hidden">
             <Link to="/shop">
-              <Button size="lg" className="bg-primary hover:bg-primary/90">
-                Explore All Products
+              <Button variant="outline" size="sm" className="border-border hover:border-primary hover:bg-primary/5 px-6">
+                View All Products
+                <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </Link>
           </div>

@@ -30,6 +30,9 @@ import adminProductRoutes from './routes/admin/products';
 import adminOrderRoutes from './routes/admin/orders';
 import adminUserRoutes from './routes/admin/users';
 import adminCategoryRoutes from './routes/admin/categories';
+import adminContactRoutes from './routes/admin/contact';
+import adminCareerRoutes from './routes/admin/careers';
+import adminNewsletterRoutes from './routes/admin/newsletter';
 
 dotenv.config();
 
@@ -51,11 +54,32 @@ app.use('/api/', limiter);
 
 // Middleware
 app.use(compression());
-app.use(morgan('combined'));
+
+// Custom morgan format to sanitize sensitive data (passwords) from logs
+morgan.token('body', (req: any) => {
+  if (req.body && typeof req.body === 'object') {
+    const sanitized = { ...req.body };
+    // Remove password fields from logs
+    if (sanitized.password) sanitized.password = '[REDACTED]';
+    if (sanitized.currentPassword) sanitized.currentPassword = '[REDACTED]';
+    if (sanitized.newPassword) sanitized.newPassword = '[REDACTED]';
+    if (sanitized.confirmPassword) sanitized.confirmPassword = '[REDACTED]';
+    return JSON.stringify(sanitized);
+  }
+  return '';
+});
+
+// Use custom format that doesn't log sensitive data
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms', {
+  skip: (req: any, res: any) => {
+    // Skip logging for health checks
+    return req.url === '/health';
+  }
+}));
 app.use(cors({
   origin: [
     process.env.FRONTEND_URL || 'http://localhost:5000',
-    'http://localhost:3002',
+    'http://localhost:8080',
     'http://127.0.0.1:5000',
     'http://127.0.0.1:3002',
     /.*\.replit\.dev$/
@@ -104,6 +128,9 @@ app.use('/api/admin/products', adminProductRoutes);
 app.use('/api/admin/orders', adminOrderRoutes);
 app.use('/api/admin/users', adminUserRoutes);
 app.use('/api/admin/categories', adminCategoryRoutes);
+app.use('/api/admin/contact', adminContactRoutes);
+app.use('/api/admin/careers', adminCareerRoutes);
+app.use('/api/admin/newsletter', adminNewsletterRoutes);
 
 // Test authentication endpoint
 app.get('/api/test-auth', protect as any, (req: Request, res: Response) => {

@@ -1,121 +1,127 @@
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import categoryService from '@/services/categoryService';
 import { categories } from '@/data/products';
-import { ArrowRight } from 'lucide-react';
-import derailleurImg from '@/assets/derailleur.jpg';
-import wheelImg from '@/assets/wheel.jpg';
-import helmetImg from '@/assets/helmet.jpg';
+import { ArrowRight, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const FeaturedCategories = () => {
-  const featuredCategories = [
-    {
-      id: 'drivetrain',
-      name: 'Drivetrain Systems',
-      description: 'Precision shifting for every terrain',
-      image: derailleurImg,
-      itemCount: '200+',
-      isNew: true,
-    },
-    {
-      id: 'wheels',
-      name: 'Wheels & Tires',
-      description: 'Roll with confidence and speed',
-      image: wheelImg,
-      itemCount: '150+',
-      isNew: false,
-    },
-    {
-      id: 'accessories',
-      name: 'Smart Accessories',
-      description: 'Technology meets performance',
-      image: helmetImg,
-      itemCount: '180+',
-      isNew: true,
-    },
-  ];
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [displayCategories, setDisplayCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoading(true);
+        const apiCategories = await categoryService.getCategories();
+        // Transform API categories to match expected format
+        const transformedCategories = apiCategories.map((cat: any) => ({
+          id: cat._id || cat.id,
+          name: cat.name,
+          icon: cat.icon || '🏷️',
+          slug: cat.slug || cat.name.toLowerCase().replace(/\s+/g, '-')
+        }));
+        setDisplayCategories(transformedCategories.filter((cat: any) => cat.id !== 'all'));
+      } catch (err: any) {
+        console.error('Error fetching categories:', err);
+        // Fallback to static data
+        setDisplayCategories(categories.filter(cat => cat.id !== 'all'));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 300;
+      scrollContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   return (
-    <section className="py-20 bg-background">
+    <section className="py-6 md:py-10 lg:py-12 bg-background border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Featured Categories
+        <div className="flex items-center justify-between mb-4 md:mb-6">
+          <h2 className="text-lg md:text-2xl font-bold text-foreground">
+            Shop by Category
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Explore our curated collection of premium cycling gear, designed for riders who demand excellence
-          </p>
-        </div>
-
-        {/* Categories Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {featuredCategories.map((category, index) => (
-            <Link
-              key={category.id}
-              to={`/category/${category.id}`}
-              className="group block"
-            >
-              <div className="relative bg-card border border-border rounded-2xl overflow-hidden hover:border-primary/20 transition-all duration-300 hover:shadow-hover">
-                {/* Category Image */}
-                <div className="aspect-[4/3] overflow-hidden bg-muted/30">
-                  <img
-                    src={category.image}
-                    alt={category.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
-                </div>
-
-                {/* Category Info */}
-                <div className="absolute bottom-0 left-0 right-0 p-6">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors duration-200">
-                        {category.name}
-                      </h3>
-                      <p className="text-muted-foreground mb-3">
-                        {category.description}
-                      </p>
-                    </div>
-                    {category.isNew && (
-                      <Badge className="bg-primary text-primary-foreground">NEW</Badge>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      {category.itemCount} items
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-200"
-                    >
-                      Shop Now
-                      <ArrowRight className="ml-2 w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-
-        {/* All Categories Button */}
-        <div className="text-center">
           <Link to="/categories">
-            <Button 
-              variant="outline" 
-              size="lg"
-              className="border-border hover:border-primary hover:bg-primary/5 px-8"
-            >
-              View All Categories
-              <ArrowRight className="ml-2 w-5 h-5" />
+            <Button variant="ghost" size="sm" className="text-primary hover:text-primary hover:bg-primary/5">
+              View All
+              <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
           </Link>
         </div>
+
+        {/* Scrollable Categories */}
+        <div className="relative group/container">
+          {/* Left Arrow - Always visible with better styling */}
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-background/95 backdrop-blur-sm shadow-lg border-2 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-200"
+            onClick={() => scroll('left')}
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </Button>
+
+          {/* Right Arrow - Always visible with better styling */}
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-background/95 backdrop-blur-sm shadow-lg border-2 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-200"
+            onClick={() => scroll('right')}
+          >
+            <ChevronRight className="w-5 h-5" />
+          </Button>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div 
+              ref={scrollContainerRef}
+              className="flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory px-12"
+            >
+              {displayCategories.map((category) => (
+                <Link
+                  key={category.id}
+                  to={`/category/${category.slug || category.id}`}
+                  className="flex-shrink-0 snap-start"
+                >
+                  <div className="flex flex-col items-center gap-2 w-16 md:w-20 lg:w-24 group">
+                    <div className="w-14 h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-full bg-muted border border-border flex items-center justify-center text-2xl md:text-3xl lg:text-4xl transition-all duration-200 group-hover:border-primary group-hover:bg-primary/5 group-hover:scale-105">
+                      {category.icon}
+                    </div>
+                    <span className="text-xs md:text-sm text-center text-foreground font-medium line-clamp-2 group-hover:text-primary transition-colors">
+                      {category.name}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
+      <style>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </section>
   );
 };

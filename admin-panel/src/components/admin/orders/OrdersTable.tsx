@@ -165,14 +165,14 @@ export const OrdersTable = memo(function OrdersTable({
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <img
-                      src={order.customer.avatar}
-                      alt={order.customer.name}
+                      src={order.customer?.avatar}
+                      alt={order.customer?.name}
                       className="h-8 w-8 rounded-full object-cover"
                     />
                     <div>
-                      <p className="font-medium text-sm">{order.customer.name}</p>
+                      <p className="font-medium text-sm">{order.customer?.name}</p>
                       <p className="text-xs text-muted-foreground truncate max-w-[150px]">
-                        {order.customer.email}
+                        {order.customer?.email}
                       </p>
                     </div>
                   </div>
@@ -192,7 +192,7 @@ export const OrdersTable = memo(function OrdersTable({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className="font-medium">₹{order.total.toLocaleString()}</span>
+                  <span className="font-medium">₹{order.total?.toLocaleString()}</span>
                 </TableCell>
                 <TableCell>
                   <Badge className={statusConfig.color}>

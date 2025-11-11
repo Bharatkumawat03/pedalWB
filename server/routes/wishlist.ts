@@ -16,8 +16,8 @@ router.use(protect);
 
 router.get('/', getWishlist);
 router.post('/add', addToWishlist);
+router.delete('/product/:productId', removeFromWishlistByProduct); // Must be before /:itemId
 router.delete('/:itemId', removeFromWishlist);
-router.delete('/product/:productId', removeFromWishlistByProduct);
 router.delete('/', clearWishlist);
 router.post('/:itemId/move-to-cart', moveToCart);
 router.post('/:productId/move-to-cart', async (req, res, next) => {
@@ -69,6 +69,11 @@ router.post('/toggle', async (req, res, next): Promise<void> => {
     const User = require('../models/User').default;
     const user = await User.findById((req as any).user?.id);
     
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+    
     const existingItem = user.wishlist.find(
       (item: any) => item.product.toString() === productId
     );
@@ -79,7 +84,22 @@ router.post('/toggle', async (req, res, next): Promise<void> => {
         (item: any) => item.product.toString() !== productId
       );
       await user.save();
-      res.json({ success: true, message: 'Removed from wishlist', inWishlist: false });
+      
+      // Populate for response
+      await user.populate({
+        path: 'wishlist.product',
+        select: 'name price images brand category rating inventory'
+      });
+      
+      res.json({ 
+        success: true, 
+        message: 'Removed from wishlist', 
+        inWishlist: false,
+        data: {
+          items: user.wishlist,
+          count: user.wishlist.length
+        }
+      });
     } else {
       // Add to wishlist
       const Product = require('../models/Product').default;
@@ -91,7 +111,22 @@ router.post('/toggle', async (req, res, next): Promise<void> => {
       
       user.wishlist.push({ product: productId, addedAt: new Date() });
       await user.save();
-      res.json({ success: true, message: 'Added to wishlist', inWishlist: true });
+      
+      // Populate for response
+      await user.populate({
+        path: 'wishlist.product',
+        select: 'name price images brand category rating inventory'
+      });
+      
+      res.json({ 
+        success: true, 
+        message: 'Added to wishlist', 
+        inWishlist: true,
+        data: {
+          items: user.wishlist,
+          count: user.wishlist.length
+        }
+      });
     }
   } catch (error) {
     next(error);

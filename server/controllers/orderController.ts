@@ -112,11 +112,20 @@ export const getOrder = async (req: AuthenticatedRequest, res: Response, next: N
       return;
     }
 
-    // Check if user owns this order or is admin
-    if (order.user._id.toString() !== req.user?.id && req.user?.role !== 'admin') {
+    // Check if user owns this order or is admin (skip check for guest orders)
+    if (order.user && order.user._id.toString() !== req.user?.id && req.user?.role !== 'admin') {
       res.status(403).json({
         success: false,
         message: 'Access denied'
+      });
+      return;
+    }
+    
+    // Guest orders can only be accessed by providing order number via email/phone
+    if (!order.user && !req.user) {
+      res.status(403).json({
+        success: false,
+        message: 'Access denied. Please sign in to view your orders.'
       });
       return;
     }
@@ -130,9 +139,9 @@ export const getOrder = async (req: AuthenticatedRequest, res: Response, next: N
   }
 };
 
-// @desc    Create new order
+// @desc    Create new order (supports both authenticated and guest checkout)
 // @route   POST /api/orders
-// @access  Private
+// @access  Public (optional auth)
 export const createOrder = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const {
@@ -159,17 +168,27 @@ export const createOrder = async (req: AuthenticatedRequest, res: Response, next
         return;
       }
 
-      if (!product.inventory.inStock || product.inventory.quantity < item.quantity) {
+      // Check inventory - handle both isInStock and inventory.inStock
+      const isInStock = product.isInStock !== false && 
+                       (product.inventory?.inStock !== false);
+      const availableQuantity = product.inventory?.quantity || 0;
+      
+      if (!isInStock || availableQuantity < item.quantity) {
         res.status(400).json({
           success: false,
-          message: `Insufficient stock for product: ${product.name}`
+          message: `Insufficient stock for product: ${product.name}. Available: ${availableQuantity}, Requested: ${item.quantity}`
         });
         return;
       }
     }
 
+    // Generate order number
+    const orderCount = await Order.countDocuments();
+    const orderNumber = `ORD-${Date.now()}-${(orderCount + 1).toString().padStart(4, '0')}`;
+
     const order = await Order.create({
       user: req.user?.id,
+      orderNumber,
       items,
       shippingAddress,
       billingAddress: billingAddress || shippingAddress,
@@ -320,11 +339,20 @@ export const cancelOrder = async (req: AuthenticatedRequest, res: Response, next
       return;
     }
 
-    // Check if user owns this order
-    if (order.user.toString() !== req.user?.id) {
+    // Check if user owns this order (skip check for guest orders)
+    if (order.user && order.user.toString() !== req.user?.id) {
       res.status(403).json({
         success: false,
         message: 'Access denied'
+      });
+      return;
+    }
+    
+    // Guest orders require authentication to track
+    if (!order.user && !req.user) {
+      res.status(403).json({
+        success: false,
+        message: 'Access denied. Please sign in to track your orders.'
       });
       return;
     }

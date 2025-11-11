@@ -1,6 +1,9 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
 import User, { IUser } from '../models/User';
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export interface RegisterData {
   firstName: string;
@@ -28,8 +31,16 @@ class AuthService {
       throw new Error('User already exists with this email');
     }
 
-    // Create user
-    const user = await User.create(userData);
+    // Password is already SHA-256 hashed from frontend
+    // Hash it again with bcrypt before storing: bcrypt(SHA256(plain_password))
+    const saltRounds = 12;
+    const bcryptHashedPassword = await bcrypt.hash(userData.password, saltRounds);
+
+    // Create user with bcrypt hashed password
+    const user = await User.create({
+      ...userData,
+      password: bcryptHashedPassword
+    });
 
     // Generate token
     const token = this.generateToken((user._id as any).toString());
@@ -53,8 +64,15 @@ class AuthService {
       throw new Error('Invalid credentials');
     }
 
-    // Check password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    // Password is already SHA-256 hashed from frontend
+    // For new users: stored password is bcrypt(SHA256(plain_password))
+    // For old users: stored password is bcrypt(plain_password) - need to handle migration
+    // Try comparing SHA-256 hash with stored bcrypt hash (new format)
+    let isPasswordValid = await bcrypt.compare(password, user.password);
+    
+    // If comparison fails, it might be an old password format
+    // In that case, we can't verify without the plain password, so login fails
+    // Users with old passwords will need to reset their password
     if (!isPasswordValid) {
       throw new Error('Invalid credentials');
     }
@@ -96,13 +114,14 @@ class AuthService {
       throw new Error('User not found');
     }
 
-    // Verify current password
+    // Passwords are already SHA-256 hashed from frontend
+    // Verify current password (compare SHA-256 hash with stored bcrypt hash)
     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
     if (!isCurrentPasswordValid) {
       throw new Error('Current password is incorrect');
     }
 
-    // Hash new password
+    // Hash new password (SHA-256 hash) with bcrypt before storing
     const saltRounds = 12;
     const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
 
@@ -146,7 +165,8 @@ class AuthService {
       throw new Error('Invalid or expired reset token');
     }
 
-    // Hash new password
+    // Password is already SHA-256 hashed from frontend
+    // Hash it again with bcrypt before storing
     const saltRounds = 12;
     user.password = await bcrypt.hash(newPassword, saltRounds);
     (user as any).passwordResetToken = undefined;
@@ -191,6 +211,71 @@ class AuthService {
       throw new Error('JWT_SECRET environment variable is required');
     }
     return jwt.verify(token, secret) as { id: string };
+  }
+
+  async googleAuth(tokenId: string): Promise<AuthResponse> {
+    try {
+      // Verify the Google token
+      const ticket = await client.verifyIdToken({
+        idToken: tokenId,
+        audience: process.env.GOOGLE_CLIENT_ID
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload) {
+        throw new Error('Invalid Google token');
+      }
+
+      const { sub: googleId, email, given_name: firstName, family_name: lastName, picture: avatar } = payload;
+
+      if (!email) {
+        throw new Error('Email not provided by Google');
+      }
+
+      // Check if user exists
+      let user = await User.findOne({ 
+        $or: [
+          { email },
+          { 'socialAuth.googleId': googleId }
+        ]
+      });
+
+      if (user) {
+        // User exists, update Google ID if not set
+        if (!(user as any).socialAuth?.googleId) {
+          (user as any).socialAuth = { ...(user.socialAuth || {}), googleId };
+          if (avatar && !user.avatar) {
+            user.avatar = { url: avatar };
+          }
+          await user.save();
+        }
+      } else {
+        // Create new user
+        user = await User.create({
+          firstName: firstName || 'User',
+          lastName: lastName || '',
+          email,
+          password: await bcrypt.hash(Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15), 12), // Random password
+          avatar: avatar ? { url: avatar } : undefined,
+          socialAuth: { googleId },
+          emailVerified: true // Google emails are verified
+        });
+      }
+
+      // Generate token
+      const token = this.generateToken((user._id as any).toString());
+
+      // Remove password from response
+      const userObj = user.toObject();
+      const { password: _, ...userResponse } = userObj;
+
+      return {
+        user: userResponse,
+        token
+      };
+    } catch (error: any) {
+      throw new Error(error.message || 'Google authentication failed');
+    }
   }
 }
 

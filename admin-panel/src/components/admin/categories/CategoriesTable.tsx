@@ -33,7 +33,7 @@ interface CategoriesTableProps {
   onViewProducts: (category: any) => void;
   onEditCategory: (category: any) => void;
   onDeleteCategory: (categoryId: string) => void;
-  onToggleStatus: (categoryId: string, currentStatus: string) => void;
+  onToggleStatus: (category: any, currentStatus: string) => void;
   sortField: string;
   sortDirection: 'asc' | 'desc';
   onSort: (field: string) => void;
@@ -105,82 +105,90 @@ export const CategoriesTable = React.memo(function CategoriesTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {categories.map((category) => (
-            <TableRow key={category.id} className="hover:bg-muted/20 transition-colors">
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <img
-                    src={category.image.url}
-                    alt={category.image.altText}
-                    className="h-10 w-10 rounded-lg object-cover hover-scale"
-                  />
-                  <div>
-                    <p className="font-medium">{category.name}</p>
-                    <p className="text-sm text-muted-foreground">ID: {category.id}</p>
+          {categories.map((category) => {
+            const categoryId = category._id || category.id;
+            const categoryImage = category.image || {};
+            const productCount = category.productCount || 0;
+            const status = category.status || 'Active';
+            return (
+              <TableRow key={categoryId} className="hover:bg-muted/20 transition-colors">
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    {categoryImage.url && (
+                      <img
+                        src={categoryImage.url}
+                        alt={categoryImage.altText || category.name}
+                        className="h-10 w-10 rounded-lg object-cover hover-scale"
+                      />
+                    )}
+                    <div>
+                      <p className="font-medium">{category.name}</p>
+                      <p className="text-sm text-muted-foreground">ID: {categoryId}</p>
+                    </div>
                   </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <code className="text-sm bg-muted px-2 py-1 rounded">
-                  /{category.slug}
-                </code>
-              </TableCell>
-              <TableCell className="max-w-xs">
-                <p className="text-sm truncate">{category.description}</p>
-              </TableCell>
-              <TableCell>
-                <Badge className="bg-primary/20 text-primary hover:bg-primary/30">
-                  {category.productCount}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge className={getStatusColor(category.status)}>
-                  {category.status}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="hover-scale">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-popover z-50">
-                    <DropdownMenuItem onClick={() => onViewProducts(category)}>
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Products ({category.productCount})
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onEditCategory(category)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Category
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => onToggleStatus(category.id, category.status)}>
-                      {category.status === 'Active' ? (
-                        <>
-                          <ToggleLeft className="h-4 w-4 mr-2" />
-                          Deactivate
-                        </>
-                      ) : (
-                        <>
-                          <ToggleRight className="h-4 w-4 mr-2" />
-                          Activate
-                        </>
-                      )}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      className="text-destructive"
-                      onClick={() => onDeleteCategory(category.id)}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Category
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
+                </TableCell>
+                <TableCell>
+                  <code className="text-sm bg-muted px-2 py-1 rounded">
+                    /{category.slug}
+                  </code>
+                </TableCell>
+                <TableCell className="max-w-xs">
+                  <p className="text-sm truncate">{category.description}</p>
+                </TableCell>
+                <TableCell>
+                  <Badge className="bg-primary/20 text-primary hover:bg-primary/30">
+                    {productCount}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge className={getStatusColor(status)}>
+                    {status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="hover-scale">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-popover z-50">
+                      <DropdownMenuItem onClick={() => onViewProducts(category)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Products ({productCount})
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onEditCategory(category)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Category
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => onToggleStatus(category, status)}>
+                        {status === 'Active' ? (
+                          <>
+                            <ToggleLeft className="h-4 w-4 mr-2" />
+                            Deactivate
+                          </>
+                        ) : (
+                          <>
+                            <ToggleRight className="h-4 w-4 mr-2" />
+                            Activate
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        className="text-destructive"
+                        onClick={() => onDeleteCategory(categoryId)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete Category
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>

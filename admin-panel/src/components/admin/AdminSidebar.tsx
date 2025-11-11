@@ -1,4 +1,7 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/store/store";
+import { logoutAdmin } from "@/store/slices/authSlice";
 import {
   Sidebar,
   SidebarContent,
@@ -70,6 +73,8 @@ const menuItems = [
 export function AdminSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
   const isCollapsed = state === "collapsed";
 
   const isActive = (path: string) => {
@@ -77,6 +82,16 @@ export function AdminSidebar() {
       return location.pathname === "/admin";
     }
     return location.pathname.startsWith(path);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutAdmin());
+      navigate("/admin/login", { replace: true });
+    } catch (error) {
+      // Even if logout fails, redirect to login
+      navigate("/admin/login", { replace: true });
+    }
   };
 
   return (
@@ -142,7 +157,7 @@ export function AdminSidebar() {
         <div className="mt-auto pt-4 border-t border-sidebar-border">
           <SidebarMenuItem>
             <SidebarMenuButton
-              onClick={() => window.location.href = '/'}
+              onClick={handleLogout}
               className="text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground rounded-xl transition-all duration-200 group cursor-pointer"
             >
               <div className="flex items-center gap-3 px-3 py-3">

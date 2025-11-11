@@ -8,14 +8,15 @@ import { OrdersTable } from "@/components/admin/orders/OrdersTable";
 import { PaginationControls } from "@/components/admin/PaginationControls";
 import { TableSkeleton } from "@/components/admin/TableSkeleton";
 import { StatsCard } from "@/components/admin/StatsCard";
-import { useAdminData } from "@/hooks/useAdminData";
+import { useOrders } from "@/hooks/useOrders";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/useDebounce";
-import { usePagination } from "@/hooks/usePagination";
 import { ShoppingCart, DollarSign, Package, Clock, TrendingUp, CheckCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 export default function AdminOrders() {
+  console.log('AdminOrders component rendering');
+  
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -30,24 +31,48 @@ export default function AdminOrders() {
   const [sortField, setSortField] = useState<string>("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
-  const { orders, updateOrderStatus, cancelOrder, searchOrders, loading } = useAdminData();
+  const {
+    orders,
+    loading,
+    currentPage,
+    totalPages,
+    totalOrders,
+    fetchOrders,
+    updateOrderStatus,
+    updatePaymentStatus,
+    addTrackingNumber,
+    cancelOrder,
+  } = useOrders();
 
   // Debounce search for performance
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  // Calculate stats
+  // Calculate stats from current orders (for display)
+  // Note: For accurate stats, consider fetching from a dedicated stats endpoint
   const stats = useMemo(() => {
-    const totalOrders = orders.length;
-    const completedOrders = orders.filter(o => o.status === 'Delivered').length;
-    const pendingOrders = orders.filter(o => o.status === 'Pending').length;
-    const processingOrders = orders.filter(o => o.status === 'Processing').length;
-    const cancelledOrders = orders.filter(o => o.status === 'Cancelled').length;
-    const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
-    const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-    const completionRate = totalOrders > 0 ? (completedOrders / totalOrders) * 100 : 0;
+    const totalOrdersCount = totalOrders; // Use total from API
+    const completedOrders = orders.filter(o => {
+      const status = o.status?.toLowerCase();
+      return status === 'delivered' || status === 'completed';
+    }).length;
+    const pendingOrders = orders.filter(o => {
+      const status = o.status?.toLowerCase();
+      return status === 'pending';
+    }).length;
+    const processingOrders = orders.filter(o => {
+      const status = o.status?.toLowerCase();
+      return status === 'processing' || status === 'shipped';
+    }).length;
+    const cancelledOrders = orders.filter(o => {
+      const status = o.status?.toLowerCase();
+      return status === 'cancelled';
+    }).length;
+    const totalRevenue = orders.reduce((sum, o) => sum + (o.total || o.totalAmount || 0), 0);
+    const avgOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
+    const completionRate = totalOrdersCount > 0 ? (completedOrders / totalOrdersCount) * 100 : 0;
     
     return {
-      totalOrders,
+      totalOrders: totalOrdersCount,
       completedOrders,
       pendingOrders,
       processingOrders,
@@ -56,94 +81,40 @@ export default function AdminOrders() {
       avgOrderValue,
       completionRate,
     };
-  }, [orders]);
+  }, [orders, totalOrders]);
 
-  // Filter orders with memoization
-  const filteredOrders = useMemo(() => {
-    let filtered = searchOrders(debouncedSearchTerm, selectedStatus, selectedPaymentStatus);
-
-    // Date range filter
-    if (dateFrom) {
-      filtered = filtered.filter((order) => new Date(order.orderDate) >= new Date(dateFrom));
-    }
-    if (dateTo) {
-      filtered = filtered.filter((order) => new Date(order.orderDate) <= new Date(dateTo));
-    }
-
-    // Amount range filter
-    if (minAmount) {
-      filtered = filtered.filter((order) => order.total >= parseFloat(minAmount));
-    }
-    if (maxAmount) {
-      filtered = filtered.filter((order) => order.total <= parseFloat(maxAmount));
-    }
-
-    // Sorting
-    const sorted = [...filtered].sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
-
-      switch (sortField) {
-        case "id":
-          aValue = a.id;
-          bValue = b.id;
-          break;
-        case "customer":
-          aValue = a.customer.name.toLowerCase();
-          bValue = b.customer.name.toLowerCase();
-          break;
-        case "total":
-          aValue = a.total;
-          bValue = b.total;
-          break;
-        case "status":
-          aValue = a.status.toLowerCase();
-          bValue = b.status.toLowerCase();
-          break;
-        case "date":
-          aValue = new Date(a.orderDate).getTime();
-          bValue = new Date(b.orderDate).getTime();
-          break;
-        default:
-          return 0;
-      }
-
-      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
-      return 0;
-    });
-
-    return sorted;
-  }, [
-    debouncedSearchTerm,
-    selectedStatus,
-    selectedPaymentStatus,
-    dateFrom,
-    dateTo,
-    minAmount,
-    maxAmount,
-    sortField,
-    sortDirection,
-    orders,
-    searchOrders,
-  ]);
-
-  // Pagination
-  const {
-    currentPage,
-    totalPages,
-    paginatedItems,
-    goToPage,
-    startIndex,
-    endIndex,
-    totalItems,
-    resetPage,
-  } = usePagination(filteredOrders, itemsPerPage);
-
-  // Reset to page 1 when filters change
+  // Refetch when filters change (server-side filtering)
   useEffect(() => {
-    resetPage();
-  }, [debouncedSearchTerm, selectedStatus, selectedPaymentStatus, dateFrom, dateTo, minAmount, maxAmount, resetPage]);
+    const filters: any = {};
+    if (debouncedSearchTerm) filters.search = debouncedSearchTerm;
+    if (selectedStatus !== "all") filters.status = selectedStatus;
+    if (selectedPaymentStatus !== "all") filters.paymentStatus = selectedPaymentStatus;
+    if (dateFrom) filters.dateFrom = dateFrom;
+    if (dateTo) filters.dateTo = dateTo;
+    if (minAmount) filters.minAmount = parseFloat(minAmount);
+    if (maxAmount) filters.maxAmount = parseFloat(maxAmount);
+    if (sortField) filters.sortBy = sortField;
+    if (sortDirection) filters.sortOrder = sortDirection;
+    fetchOrders(1, itemsPerPage, filters);
+  }, [debouncedSearchTerm, selectedStatus, selectedPaymentStatus, dateFrom, dateTo, minAmount, maxAmount, sortField, sortDirection]);
+
+  // Pagination - use server-side pagination
+  const paginatedItems = orders; // Orders are already paginated from the server
+  const startIndex = totalOrders > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
+  const endIndex = Math.min(currentPage * itemsPerPage, totalOrders);
+  const totalItems = totalOrders;
+  
+  const goToPage = (page: number) => {
+    const filters: any = {};
+    if (debouncedSearchTerm) filters.search = debouncedSearchTerm;
+    if (selectedStatus !== "all") filters.status = selectedStatus;
+    if (selectedPaymentStatus !== "all") filters.paymentStatus = selectedPaymentStatus;
+    if (dateFrom) filters.dateFrom = dateFrom;
+    if (dateTo) filters.dateTo = dateTo;
+    if (minAmount) filters.minAmount = parseFloat(minAmount);
+    if (maxAmount) filters.maxAmount = parseFloat(maxAmount);
+    fetchOrders(page, itemsPerPage, filters);
+  };
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -172,35 +143,47 @@ export default function AdminOrders() {
   };
 
   const handleViewOrder = (orderId: string) => {
-    const order = orders.find((o) => o.id === orderId);
+    const order = orders.find((o) => (o._id || o.id) === orderId);
     if (order) {
       setSelectedOrder(order);
       setShowOrderDetails(true);
     }
   };
 
-  const handleTrackOrder = (orderId: string) => {
-    const order = orders.find((o) => o.id === orderId);
-    if (order?.trackingNumber) {
-      toast({
-        title: "Tracking Information",
-        description: `Tracking Number: ${order.trackingNumber}`,
-      });
+  const handleTrackOrder = async (orderId: string, trackingNumber?: string) => {
+    if (trackingNumber) {
+      try {
+        await addTrackingNumber(orderId, trackingNumber);
+        toast({
+          title: "Tracking Number Added",
+          description: `Tracking Number: ${trackingNumber}`,
+        });
+      } catch (error) {
+        // Error handled in hook
+      }
     } else {
-      toast({
-        title: "No Tracking Available",
-        description: "This order doesn't have tracking information yet.",
-        variant: "destructive",
-      });
+      const order = orders.find((o) => (o._id || o.id) === orderId);
+      if (order?.trackingNumber) {
+        toast({
+          title: "Tracking Information",
+          description: `Tracking Number: ${order.trackingNumber}`,
+        });
+      } else {
+        toast({
+          title: "No Tracking Available",
+          description: "This order doesn't have tracking information yet.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const handleCancelOrder = async (orderId: string) => {
+  const handleCancelOrder = async (orderId: string, reason: string = "Cancelled by admin") => {
     try {
-      await cancelOrder(orderId);
+      await cancelOrder(orderId, reason);
       setShowOrderDetails(false);
     } catch (error) {
-      // Error handling is done in the hook
+      // Error handled in hook
     }
   };
 

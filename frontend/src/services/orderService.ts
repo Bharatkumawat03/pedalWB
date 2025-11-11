@@ -10,22 +10,25 @@ export interface OrderItem {
 export interface Address {
   firstName: string;
   lastName: string;
-  addressLine1: string;
-  addressLine2?: string;
+  email: string;
+  phone: string;
+  address: string;
   city: string;
   state: string;
-  postalCode: string;
+  zipCode: string;
   country: string;
-  phone?: string;
 }
 
 export interface CreateOrderData {
   items: OrderItem[];
   shippingAddress: Address;
   billingAddress?: Address;
-  paymentMethod: 'credit_card' | 'debit_card' | 'upi' | 'net_banking' | 'wallet' | 'cod';
-  couponCode?: string;
-  loyaltyPointsUsed?: number;
+  paymentMethod: 'card' | 'upi' | 'netbanking' | 'wallet' | 'cod';
+  subtotal: number;
+  tax: number;
+  shipping: number;
+  discount?: number;
+  totalAmount: number;
   notes?: string;
 }
 

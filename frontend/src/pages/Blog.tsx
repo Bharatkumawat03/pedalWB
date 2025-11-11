@@ -82,27 +82,27 @@ const Blog = () => {
   const filteredRegular = blogPosts.filter(post => !post.featured && (selectedCategory === 'All' || post.category === selectedCategory));
   
   return (
-    <div className="min-h-screen bg-background py-12">
+    <div className="min-h-screen bg-background py-4 md:py-6 lg:py-8">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-foreground mb-4">
+        <div className="text-center mb-4 md:mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
             PedalBharat Blog
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto">
             Expert tips, guides, and stories from the world of cycling in India. 
             Learn from professionals and passionate cyclists.
           </p>
         </div>
 
         {/* Categories Filter */}
-        <div className="flex flex-wrap gap-2 mb-8 justify-center">
+        <div className="flex flex-wrap gap-1.5 md:gap-2 mb-4 md:mb-6 justify-center">
           {categories.map((category) => (
             <Badge 
               key={category}
               onClick={() => setSelectedCategory(category)}
               variant={selectedCategory === category ? 'default' : 'secondary'}
-              className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+              className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors text-xs md:text-sm"
             >
               {category}
             </Badge>
@@ -110,9 +110,9 @@ const Blog = () => {
         </div>
 
         {/* Featured Posts */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold text-foreground mb-6">Featured Articles</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <section className="mb-6 md:mb-8">
+          <h2 className="text-lg md:text-xl font-bold text-foreground mb-3 md:mb-4">Featured Articles</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
             {filteredFeatured.map((post) => (
               <Link key={post.id} to={`/blog/${post.id}`}>
                 <Card className="group cursor-pointer transition-all duration-300 hover:shadow-hover bg-gradient-card border-border/50">
@@ -123,33 +123,33 @@ const Blog = () => {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
-                  <CardHeader>
+                  <CardHeader className="p-3 md:p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="outline">{post.category}</Badge>
-                      <div className="flex items-center text-sm text-muted-foreground gap-4">
+                      <Badge variant="outline" className="text-xs">{post.category}</Badge>
+                      <div className="flex items-center text-xs text-muted-foreground gap-2 md:gap-3">
                         <span className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
+                          <Calendar className="w-3 h-3" />
                           {new Date(post.date).toLocaleDateString('en-IN')}
                         </span>
                         <span className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
+                          <Clock className="w-3 h-3" />
                           {post.readTime}
                         </span>
                       </div>
                     </div>
-                    <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+                    <h3 className="text-base md:text-lg font-bold text-foreground group-hover:text-primary transition-colors">
                       {post.title}
                     </h3>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground mb-4">{post.excerpt}</p>
+                  <CardContent className="p-3 md:p-4 pt-0">
+                    <p className="text-xs md:text-sm text-muted-foreground mb-3 line-clamp-2">{post.excerpt}</p>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <User className="w-4 h-4" />
+                      <div className="flex items-center gap-1 md:gap-2 text-xs text-muted-foreground">
+                        <User className="w-3 h-3" />
                         {post.author}
                       </div>
-                      <Button variant="ghost" size="sm" className="group-hover:bg-primary group-hover:text-primary-foreground">
-                        Read More <ArrowRight className="w-4 h-4 ml-2" />
+                      <Button variant="ghost" size="sm" className="group-hover:bg-primary group-hover:text-primary-foreground text-xs h-7 md:h-8">
+                        Read More <ArrowRight className="w-3 h-3 ml-1" />
                       </Button>
                     </div>
                   </CardContent>
@@ -161,8 +161,8 @@ const Blog = () => {
 
         {/* All Posts */}
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-6">Latest Articles</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <h2 className="text-lg md:text-xl font-bold text-foreground mb-3 md:mb-4">Latest Articles</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             {filteredRegular.map((post) => (
               <Link key={post.id} to={`/blog/${post.id}`}>
                 <Card className="group cursor-pointer transition-all duration-300 hover:shadow-card bg-card border-border/50">
@@ -173,20 +173,20 @@ const Blog = () => {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center gap-2 mb-2">
+                  <CardHeader className="p-2 md:p-3 pb-1 md:pb-2">
+                    <div className="flex items-center gap-2 mb-1">
                       <Badge variant="outline" className="text-xs">{post.category}</Badge>
                     </div>
-                    <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                    <h3 className="text-sm md:text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">
                       {post.title}
                     </h3>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3">{post.excerpt}</p>
+                  <CardContent className="p-2 md:p-3 pt-0">
+                    <p className="text-xs text-muted-foreground mb-2 md:mb-3 line-clamp-2">{post.excerpt}</p>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <User className="w-3 h-3" />
-                        {post.author}
+                        <span className="truncate">{post.author}</span>
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
@@ -201,16 +201,16 @@ const Blog = () => {
         </section>
 
         {/* Newsletter Signup */}
-        <section className="mt-16 bg-gradient-primary rounded-lg p-8 text-center text-primary-foreground">
-          <h2 className="text-2xl font-bold mb-4">Stay Updated</h2>
-          <p className="mb-6 opacity-90">Get the latest cycling tips, product reviews, and route guides delivered to your inbox.</p>
-          <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+        <section className="mt-8 md:mt-10 bg-gradient-primary rounded-lg p-4 md:p-6 text-center text-primary-foreground">
+          <h2 className="text-lg md:text-xl font-bold mb-2 md:mb-3">Stay Updated</h2>
+          <p className="text-xs md:text-sm mb-4 md:mb-5 opacity-90">Get the latest cycling tips, product reviews, and route guides delivered to your inbox.</p>
+          <div className="flex flex-col sm:flex-row gap-2 md:gap-3 max-w-md mx-auto">
             <input
               type="email"
               placeholder="Enter your email"
-              className="flex-1 px-4 py-2 rounded-md text-foreground bg-background border border-border"
+              className="flex-1 px-3 py-1.5 md:py-2 text-sm rounded-md text-foreground bg-background border border-border"
             />
-            <Button variant="secondary" className="bg-background text-foreground hover:bg-background/90">
+            <Button variant="secondary" className="bg-background text-foreground hover:bg-background/90 text-sm h-8 md:h-9">
               Subscribe
             </Button>
           </div>

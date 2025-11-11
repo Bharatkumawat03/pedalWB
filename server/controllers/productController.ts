@@ -165,6 +165,42 @@ export const getFeaturedProducts = async (req: Request, res: Response, next: Nex
   }
 };
 
+// @desc    Get new products
+// @route   GET /api/products/new
+// @access  Public
+export const getNewProducts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 8;
+    const products = await productService.getNewProducts(limit);
+
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      data: products
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get best sellers
+// @route   GET /api/products/bestsellers
+// @access  Public
+export const getBestSellers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 8;
+    const products = await productService.getBestSellers(limit);
+
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      data: products
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Get products by category
 // @route   GET /api/products/category/:category
 // @access  Public
@@ -224,6 +260,8 @@ export default {
   updateProduct,
   deleteProduct,
   getFeaturedProducts,
+  getNewProducts,
+  getBestSellers,
   getProductsByCategory,
   getRelatedProducts
 };

@@ -96,7 +96,15 @@ export const getUser = async (req: AuthenticatedRequest, res: Response, next: Ne
 // @access  Private/Admin
 export const createUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { firstName, lastName, email, phone, password } = req.body;
+    const { firstName, lastName, email, phone, password, role, status } = req.body;
+
+    if (!firstName || !lastName || !email || !password) {
+      res.status(400).json({
+        success: false,
+        message: 'First name, last name, email, and password are required'
+      });
+      return;
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -114,8 +122,8 @@ export const createUser = async (req: AuthenticatedRequest, res: Response, next:
       email,
       phone,
       password,
-      role: 'user',
-      status: 'active',
+      role: role || 'user',
+      status: status || 'active',
       emailVerified: false
     });
 

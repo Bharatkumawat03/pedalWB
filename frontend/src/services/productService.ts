@@ -50,8 +50,19 @@ class ProductService {
       }
     });
 
-    const response = await api.get(`/products?${params.toString()}`);
-    return response;
+    const response = await api.get(`/products?${params.toString()}`) as any;
+    // API interceptor returns response.data, so response is already the data object
+    // Backend returns: { success: true, count: number, total: number, pagination: {...}, data: [...] }
+    return {
+      success: response.success || true,
+      data: response.data || [],
+      pagination: response.pagination || {
+        current: 1,
+        total: 1,
+        count: response.data?.length || 0,
+        totalProducts: response.total || 0
+      }
+    };
   }
 
   // Get single product by ID
@@ -63,13 +74,12 @@ class ProductService {
   // Get featured products
   async getFeaturedProducts(limit = 8): Promise<any[]> {
     try {
-      const response = await api.get(`/products/featured?limit=${limit}`);
-      // Handle different response structures
+      const response = await api.get(`/products/featured?limit=${limit}`) as any;
+      // API interceptor returns response.data, so response is already the data object
+      // Backend returns: { success: true, count: number, data: [...] }
       if (response.data && Array.isArray(response.data)) {
         return response.data;
-      } else if (response.data && response.data.products && Array.isArray(response.data.products)) {
-        return response.data.products;
-      } else if (response && Array.isArray(response)) {
+      } else if (Array.isArray(response)) {
         return response;
       }
       return [];
@@ -82,18 +92,35 @@ class ProductService {
   // Get new products
   async getNewProducts(limit = 8): Promise<any[]> {
     try {
-      const response = await api.get(`/products/new?limit=${limit}`);
-      // Handle different response structures
+      const response = await api.get(`/products/new?limit=${limit}`) as any;
+      // API interceptor returns response.data, so response is already the data object
+      // Backend returns: { success: true, count: number, data: [...] }
       if (response.data && Array.isArray(response.data)) {
         return response.data;
-      } else if (response.data && response.data.products && Array.isArray(response.data.products)) {
-        return response.data.products;
-      } else if (response && Array.isArray(response)) {
+      } else if (Array.isArray(response)) {
         return response;
       }
       return [];
     } catch (error) {
       console.error('Error fetching new products:', error);
+      return [];
+    }
+  }
+
+  // Get best sellers
+  async getBestSellers(limit = 8): Promise<any[]> {
+    try {
+      const response = await api.get(`/products/bestsellers?limit=${limit}`) as any;
+      // API interceptor returns response.data, so response is already the data object
+      // Backend returns: { success: true, count: number, data: [...] }
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      } else if (Array.isArray(response)) {
+        return response;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching best sellers:', error);
       return [];
     }
   }
@@ -118,8 +145,34 @@ class ProductService {
   }
 
   // Get product reviews
-  async getProductReviews(productId: string, page = 1, limit = 10, sort = 'newest'): Promise<any> {
-    const response = await api.get(`/products/${productId}/reviews?page=${page}&limit=${limit}&sort=${sort}`);
+  async getProductReviews(productId: string, page = 1, limit = 10, sort = 'newest', type?: 'rating' | 'review'): Promise<any> {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+      sort: String(sort)
+    });
+    if (type) {
+      params.append('type', type);
+    }
+    const response = await api.get(`/products/${productId}/reviews?${params.toString()}`);
+    return response;
+  }
+
+  // Check if user can rate/review a product
+  async canUserRate(productId: string): Promise<any> {
+    const response = await api.get(`/products/${productId}/can-rate`);
+    return response;
+  }
+
+  // Submit a rating (without review)
+  async submitRating(productId: string, rating: number): Promise<any> {
+    const response = await api.post(`/products/${productId}/rate`, { rating });
+    return response;
+  }
+
+  // Submit a review (with rating and text)
+  async submitReview(productId: string, reviewData: { rating: number; title: string; comment: string; images?: string[] }): Promise<any> {
+    const response = await api.post(`/products/${productId}/review`, reviewData);
     return response;
   }
 

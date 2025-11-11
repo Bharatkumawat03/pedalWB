@@ -104,117 +104,126 @@ export const ProductsTable = memo(function ProductsTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {products.map((product) => (
-            <TableRow key={product.id} className="hover:bg-muted/20 transition-colors">
-              <TableCell>
-                <Checkbox
-                  checked={selectedProducts.includes(product.id)}
-                  onCheckedChange={() => onToggleProduct(product.id)}
-                />
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    className="h-12 w-12 rounded-lg object-cover hover-scale cursor-pointer"
-                    onClick={() => onViewDetails(product)}
+          {products.map((product) => {
+            const productId = product._id || product.id;
+            const productStock = product.stock || product.inventory?.quantity || 0;
+            const productImages = product.images || [];
+            return (
+              <TableRow key={productId} className="hover:bg-muted/20 transition-colors">
+                <TableCell>
+                  <Checkbox
+                    checked={selectedProducts.includes(productId)}
+                    onCheckedChange={() => onToggleProduct(productId)}
                   />
-                  <div>
-                    <p
-                      className="font-medium cursor-pointer hover:text-primary"
-                      onClick={() => onViewDetails(product)}
-                    >
-                      {product.name}
-                    </p>
-                    <p className="text-sm text-muted-foreground">ID: {product.id}</p>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    {productImages.length > 0 && (
+                      <img
+                        src={productImages[0]?.url || productImages[0]}
+                        alt={product.name}
+                        className="h-12 w-12 rounded-lg object-cover hover-scale cursor-pointer"
+                        onClick={() => onViewDetails(product)}
+                      />
+                    )}
+                    <div>
+                      <p
+                        className="font-medium cursor-pointer hover:text-primary"
+                        onClick={() => onViewDetails(product)}
+                      >
+                        {product.name}
+                      </p>
+                      <p className="text-sm text-muted-foreground">ID: {productId}</p>
+                    </div>
                   </div>
-                </div>
-              </TableCell>
-              <TableCell>{product.category}</TableCell>
-              <TableCell>{product.brand}</TableCell>
-              <TableCell>
-                <div className="space-y-1">
-                  <p className="font-medium">₹{product.price.toLocaleString()}</p>
-                  {product.originalPrice !== product.price && (
-                    <p className="text-sm text-muted-foreground line-through">
-                      ₹{product.originalPrice.toLocaleString()}
-                    </p>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>
-                <span
-                  className={`font-medium ${
-                    product.stock === 0
-                      ? "text-destructive"
-                      : product.stock < 5
-                      ? "text-warning"
-                      : "text-foreground"
-                  }`}
-                >
-                  {product.stock}
-                </span>
-              </TableCell>
-              <TableCell>
-                <Badge className={getStatusColor(product.status)}>{product.status}</Badge>
-              </TableCell>
-              <TableCell>
-                {product.featured ? (
-                  <Badge
-                    className="bg-primary/20 text-primary hover:bg-primary/30 cursor-pointer"
-                    onClick={() => onToggleFeature(product.id, product.featured)}
+                </TableCell>
+                <TableCell>{product.category}</TableCell>
+                <TableCell>{product.brand}</TableCell>
+                <TableCell>
+                  <div className="space-y-1">
+                    <p className="font-medium">₹{product.price?.toLocaleString() || '0'}</p>
+                    {product.originalPrice && product.originalPrice !== product.price && (
+                      <p className="text-sm text-muted-foreground line-through">
+                        ₹{product.originalPrice.toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <span
+                    className={`font-medium ${
+                      productStock === 0
+                        ? "text-destructive"
+                        : productStock < 5
+                        ? "text-warning"
+                        : "text-foreground"
+                    }`}
                   >
-                    <Star className="h-3 w-3 mr-1 fill-current" />
-                    Featured
+                    {productStock}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <Badge className={getStatusColor(product.status || 'Active')}>
+                    {product.status || 'Active'}
                   </Badge>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onToggleFeature(product.id, product.featured)}
-                    className="h-6 text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    <Star className="h-3 w-3 mr-1" />
-                    Feature
-                  </Button>
-                )}
-              </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="hover-scale">
-                      <MoreHorizontal className="h-4 w-4" />
+                </TableCell>
+                <TableCell>
+                  {product.featured ? (
+                    <Badge
+                      className="bg-primary/20 text-primary hover:bg-primary/30 cursor-pointer"
+                      onClick={() => onToggleFeature(productId, product.featured)}
+                    >
+                      <Star className="h-3 w-3 mr-1 fill-current" />
+                      Featured
+                    </Badge>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onToggleFeature(productId, product.featured)}
+                      className="h-6 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      <Star className="h-3 w-3 mr-1" />
+                      Feature
                     </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-popover z-50">
-                    <DropdownMenuItem onClick={() => onViewDetails(product)}>
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Details
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onEdit(product)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Product
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onDuplicate(product)}>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Duplicate
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => onToggleFeature(product.id, product.featured)}>
-                      <Star className="h-4 w-4 mr-2" />
-                      {product.featured ? "Remove from Featured" : "Add to Featured"}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive" onClick={() => onDelete(product.id)}>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Product
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
+                  )}
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="hover-scale">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-popover z-50">
+                      <DropdownMenuItem onClick={() => onViewDetails(product)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onEdit(product)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Product
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onDuplicate(product)}>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Duplicate
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => onToggleFeature(productId, product.featured)}>
+                        <Star className="h-4 w-4 mr-2" />
+                        {product.featured ? "Remove from Featured" : "Add to Featured"}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-destructive" onClick={() => onDelete(productId)}>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete Product
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>

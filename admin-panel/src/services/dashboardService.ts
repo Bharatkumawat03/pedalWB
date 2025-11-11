@@ -1,5 +1,5 @@
 import api from '@/lib/api/config';
-import { DashboardStats } from '@/types';
+import { DashboardStats } from '@/types/index';
 
 class DashboardService {
   async getDashboardStats(): Promise<DashboardStats> {

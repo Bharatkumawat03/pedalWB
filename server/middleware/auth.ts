@@ -91,6 +91,52 @@ export const protect = async (req: AuthenticatedRequest, res: Response, next: Ne
   }
 };
 
+// Optional authentication - try to authenticate if token exists, but don't fail if it doesn't
+export const optionalAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    let token: string | undefined;
+
+    // Get token from header
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    // If no token, continue without authentication (guest checkout)
+    if (!token) {
+      req.user = undefined;
+      next();
+      return;
+    }
+
+    try {
+      // Verify token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+      
+      // Get user from token
+      const user = await User.findById(decoded.id).select('+password');
+      
+      if (user && user.status === 'active' && !user.isLocked) {
+        // Add user to request object if valid
+        req.user = {
+          id: user._id?.toString() || '',
+          email: user.email,
+          role: user.role
+        };
+      } else {
+        // Invalid user, continue as guest
+        req.user = undefined;
+      }
+    } catch (error) {
+      // Token invalid, continue as guest
+      req.user = undefined;
+    }
+    
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Authorize roles
 export const authorize = (...roles: string[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
@@ -109,4 +155,4 @@ export const authorize = (...roles: string[]) => {
   };
 };
 
-export default { protect, authorize };
+export default { protect, authorize, optionalAuth };

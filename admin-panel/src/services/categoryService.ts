@@ -12,10 +12,17 @@ interface PaginatedResponse<T> {
 }
 
 class CategoryService {
-  // Get all categories
+  // Get all categories (non-paginated, for dropdowns)
   async getCategories(): Promise<Category[]> {
-    const response = await api.get('/admin/categories');
-    return response.data.data;
+    // API interceptor returns { success: true, data: [...] }
+    // For non-paginated endpoint, we might need to check the actual endpoint
+    const response = await api.get('/admin/categories') as any;
+    // If it's paginated response, extract data, otherwise return directly
+    if (response.data && Array.isArray(response.data)) {
+      return response.data;
+    }
+    // Fallback: if response is already an array
+    return Array.isArray(response) ? response : [];
   }
 
   // Get categories with pagination
@@ -23,57 +30,47 @@ class CategoryService {
     page: number = 1,
     limit: number = 10
   ): Promise<PaginatedResponse<Category>> {
-    const response = await api.get(`/admin/categories?page=${page}&limit=${limit}`);
-    return response.data;
+    // API interceptor returns { success: true, data: [...], pagination: {...} }
+    const response = await api.get(`/admin/categories?page=${page}&limit=${limit}`) as any;
+    // Return structure expected by hooks: { data: [...], pagination: {...} }
+    return {
+      data: response.data || [],
+      pagination: response.pagination || { page: 1, limit: 10, total: 0, pages: 1 }
+    };
   }
 
   // Get single category
   async getCategory(id: string): Promise<Category> {
-    const response = await api.get(`/admin/categories/${id}`);
-    return response.data.data;
+    const response = await api.get(`/admin/categories/${id}`) as any;
+    return response.data || response;
   }
 
   // Create new category
   async createCategory(categoryData: CategoryForm): Promise<Category> {
-    const formData = new FormData();
-    formData.append('name', categoryData.name);
-    formData.append('description', categoryData.description || '');
-    formData.append('icon', categoryData.icon);
-    formData.append('isActive', categoryData.isActive.toString());
-    
-    if (categoryData.image) {
-      formData.append('image', categoryData.image);
-    }
+    // Backend expects JSON, not FormData (file uploads not implemented yet)
+    const payload: any = {
+      name: categoryData.name,
+      description: categoryData.description || '',
+      icon: categoryData.icon || '🏷️',
+      isActive: categoryData.isActive !== undefined ? categoryData.isActive : true,
+    };
 
-    const response = await api.post('/admin/categories', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    return response.data.data;
+    const response = await api.post('/admin/categories', payload) as any;
+    return response.data || response;
   }
 
   // Update category
   async updateCategory(id: string, categoryData: Partial<CategoryForm>): Promise<Category> {
-    const formData = new FormData();
+    // Backend expects JSON, not FormData (file uploads not implemented yet)
+    const payload: any = {};
     
-    if (categoryData.name) formData.append('name', categoryData.name);
-    if (categoryData.description !== undefined) formData.append('description', categoryData.description);
-    if (categoryData.icon) formData.append('icon', categoryData.icon);
-    if (categoryData.isActive !== undefined) formData.append('isActive', categoryData.isActive.toString());
-    
-    if (categoryData.image) {
-      formData.append('image', categoryData.image);
-    }
+    if (categoryData.name) payload.name = categoryData.name;
+    if (categoryData.description !== undefined) payload.description = categoryData.description;
+    if (categoryData.icon) payload.icon = categoryData.icon;
+    if (categoryData.isActive !== undefined) payload.isActive = categoryData.isActive;
 
-    const response = await api.put(`/admin/categories/${id}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    return response.data.data;
+    const response = await api.put(`/admin/categories/${id}`, payload) as any;
+    return response.data || response;
   }
 
   // Delete category
@@ -83,14 +80,14 @@ class CategoryService {
 
   // Toggle category status
   async toggleCategoryStatus(id: string): Promise<Category> {
-    const response = await api.patch(`/admin/categories/${id}/toggle-status`);
-    return response.data.data;
+    const response = await api.patch(`/admin/categories/${id}/toggle-status`) as any;
+    return response.data || response;
   }
 
   // Get category analytics
   async getCategoryAnalytics() {
-    const response = await api.get('/admin/categories/analytics');
-    return response.data.data;
+    const response = await api.get('/admin/categories/analytics') as any;
+    return response.data || response;
   }
 }
 

@@ -63,16 +63,19 @@ class UserService {
 
   async addAddress(address: Omit<Address, '_id'>): Promise<any> {
     const response = await api.post('/users/addresses', address) as any;
+    // Backend returns: { success: true, data: Address[] } (all addresses)
     return response;
   }
 
   async updateAddress(addressId: string, address: Partial<Address>): Promise<any> {
     const response = await api.put(`/users/addresses/${addressId}`, address) as any;
+    // Backend returns: { success: true, data: Address[] } (all addresses)
     return response;
   }
 
   async deleteAddress(addressId: string): Promise<any> {
     const response = await api.delete(`/users/addresses/${addressId}`) as any;
+    // Backend returns: { success: true, data: Address[] } (all addresses)
     return response;
   }
 }

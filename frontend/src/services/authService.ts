@@ -1,9 +1,15 @@
 import api from '../lib/api/config';
+import CryptoJS from 'crypto-js';
 
 export interface LoginCredentials {
   email: string;
   password: string;
 }
+
+// Hash password before sending to backend
+const hashPassword = (password: string): string => {
+  return CryptoJS.SHA256(password).toString();
+};
 
 export interface RegisterData {
   firstName: string;
@@ -38,7 +44,12 @@ export interface AuthResponse {
 class AuthService {
   // Login user
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await api.post('/auth/login', credentials) as AuthResponse;
+    // Hash password before sending
+    const hashedPassword = hashPassword(credentials.password);
+    const response = await api.post('/auth/login', {
+      email: credentials.email,
+      password: hashedPassword
+    }) as AuthResponse;
     
     if (response.success && response.token) {
       localStorage.setItem('token', response.token);
@@ -50,7 +61,12 @@ class AuthService {
 
   // Register user
   async register(userData: RegisterData): Promise<AuthResponse> {
-    const response = await api.post('/auth/register', userData) as AuthResponse;
+    // Hash password before sending
+    const hashedPassword = hashPassword(userData.password);
+    const response = await api.post('/auth/register', {
+      ...userData,
+      password: hashedPassword
+    }) as AuthResponse;
     
     if (response.success && response.token) {
       localStorage.setItem('token', response.token);
@@ -91,9 +107,10 @@ class AuthService {
 
   // Change password
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    // Hash passwords before sending
     const response = await api.put('/auth/password', {
-      currentPassword,
-      newPassword
+      currentPassword: hashPassword(currentPassword),
+      newPassword: hashPassword(newPassword)
     }) as any;
     
     if (!response.success) {
@@ -112,8 +129,9 @@ class AuthService {
 
   // Reset password
   async resetPassword(token: string, newPassword: string): Promise<void> {
+    // Hash password before sending
     const response = await api.post(`/auth/reset-password/${token}`, {
-      newPassword
+      newPassword: hashPassword(newPassword)
     }) as any;
     
     if (!response.success) {
@@ -135,6 +153,18 @@ class AuthService {
   // Get stored token
   getToken(): string | null {
     return localStorage.getItem('token');
+  }
+
+  // Google OAuth login/register
+  async googleAuth(tokenId: string): Promise<AuthResponse> {
+    const response = await api.post('/auth/google', { tokenId }) as AuthResponse;
+    
+    if (response.success && response.token) {
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
+    }
+    
+    return response;
   }
 }
 

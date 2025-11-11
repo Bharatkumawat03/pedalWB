@@ -11,13 +11,14 @@ import { UsersFilters } from "@/components/admin/users/UsersFilters";
 import { UsersTable } from "@/components/admin/users/UsersTable";
 import { PaginationControls } from "@/components/admin/PaginationControls";
 import { TableSkeleton } from "@/components/admin/TableSkeleton";
-import { useAdminData } from "@/hooks/useAdminData";
+import { useUsers } from "@/hooks/useUsers";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/useDebounce";
-import { usePagination } from "@/hooks/usePagination";
 import { Users, CheckCircle2, AlertTriangle, ShoppingCart } from "lucide-react";
 
 export default function AdminUsers() {
+  console.log('AdminUsers component rendering');
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -39,7 +40,19 @@ export default function AdminUsers() {
   const [bulkActionsOpen, setBulkActionsOpen] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(20);
 
-  const { users, loading, createUser, updateUser, deleteUser, searchUsers } = useAdminData();
+  const {
+    users,
+    loading,
+    currentPage,
+    totalPages,
+    totalUsers,
+    fetchUsers,
+    createUser,
+    updateUser,
+    deleteUser,
+    suspendUser,
+    activateUser,
+  } = useUsers();
   const { toast } = useToast();
 
   // Debounce search for performance
@@ -47,12 +60,31 @@ export default function AdminUsers() {
 
   // Filtered and sorted users
   const filteredUsers = useMemo(() => {
-    let result = searchUsers(debouncedSearchTerm, selectedRole, selectedStatus);
+    let result = [...users];
+
+    // Search filter
+    if (debouncedSearchTerm) {
+      result = result.filter(user => 
+        user.firstName?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        user.lastName?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        user.email?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+      );
+    }
+
+    // Role filter
+    if (selectedRole !== "all") {
+      result = result.filter(user => user.role === selectedRole);
+    }
+
+    // Status filter
+    if (selectedStatus !== "all") {
+      result = result.filter(user => user.status === selectedStatus);
+    }
 
     // Date range filter
     if (dateFrom || dateTo) {
       result = result.filter(user => {
-        const userDate = new Date(user.joinDate);
+        const userDate = new Date(user.createdAt || user.joinDate);
         const fromDate = dateFrom ? new Date(dateFrom) : null;
         const toDate = dateTo ? new Date(dateTo) : null;
         
@@ -62,34 +94,17 @@ export default function AdminUsers() {
       });
     }
 
-    // Orders range filter
-    if (minOrders || maxOrders) {
-      result = result.filter(user => {
-        const orders = user.totalOrders;
-        if (minOrders && orders < parseInt(minOrders)) return false;
-        if (maxOrders && orders > parseInt(maxOrders)) return false;
-        return true;
-      });
-    }
-
     // Sorting
     result.sort((a, b) => {
       let aValue = a[sortField];
       let bValue = b[sortField];
 
-      // Handle different data types
-      if (sortField === 'totalSpent') {
-        aValue = parseFloat(aValue);
-        bValue = parseFloat(bValue);
-      } else if (sortField === 'totalOrders') {
-        aValue = parseInt(aValue);
-        bValue = parseInt(bValue);
-      } else if (sortField === 'joinDate') {
-        aValue = new Date(aValue).getTime();
-        bValue = new Date(bValue).getTime();
-      } else if (typeof aValue === 'string') {
+      if (typeof aValue === 'string') {
         aValue = aValue.toLowerCase();
         bValue = bValue.toLowerCase();
+      } else if (aValue instanceof Date) {
+        aValue = aValue.getTime();
+        bValue = bValue.getTime();
       }
 
       if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
@@ -98,40 +113,62 @@ export default function AdminUsers() {
     });
 
     return result;
-  }, [debouncedSearchTerm, selectedRole, selectedStatus, dateFrom, dateTo, minOrders, maxOrders, sortField, sortDirection, searchUsers]);
+  }, [debouncedSearchTerm, selectedRole, selectedStatus, dateFrom, dateTo, sortField, sortDirection, users]);
 
   // Pagination
-  const {
-    currentPage,
-    totalPages,
-    paginatedItems,
-    goToPage,
-    startIndex,
-    endIndex,
-    totalItems,
-    resetPage,
-  } = usePagination(filteredUsers, itemsPerPage);
+  const paginatedItems = filteredUsers.slice(0, itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage + 1;
+  const endIndex = Math.min(currentPage * itemsPerPage, filteredUsers.length);
+  const totalItems = filteredUsers.length;
+  
+  const goToPage = (page: number) => {
+    const filters: any = {};
+    if (debouncedSearchTerm) filters.search = debouncedSearchTerm;
+    if (selectedRole !== "all") filters.role = selectedRole;
+    if (selectedStatus !== "all") filters.status = selectedStatus;
+    fetchUsers(page, itemsPerPage, filters);
+  };
 
-  // Reset to page 1 when filters change
+  // Refetch when filters change
   useEffect(() => {
-    resetPage();
-  }, [debouncedSearchTerm, selectedRole, selectedStatus, dateFrom, dateTo, minOrders, maxOrders, resetPage]);
+    const filters: any = {};
+    if (debouncedSearchTerm) filters.search = debouncedSearchTerm;
+    if (selectedRole !== "all") filters.role = selectedRole;
+    if (selectedStatus !== "all") filters.status = selectedStatus;
+    fetchUsers(1, itemsPerPage, filters);
+  }, [debouncedSearchTerm, selectedRole, selectedStatus]);
 
   const handleCreateUser = async (data: any) => {
-    await createUser(data);
+    try {
+      await createUser(data);
+      setUserFormOpen(false);
+    } catch (error) {
+      // Error handled in hook
+    }
   };
 
   const handleUpdateUser = async (data: any) => {
     if (editingUser) {
-      await updateUser(editingUser.id, data);
-      setEditingUser(null);
+      try {
+        const userId = editingUser._id || editingUser.id;
+        await updateUser(userId, data);
+        setEditingUser(null);
+        setUserFormOpen(false);
+      } catch (error) {
+        // Error handled in hook
+      }
     }
   };
 
   const handleDeleteUser = async () => {
     if (userToDelete) {
-      await deleteUser(userToDelete);
-      setUserToDelete(null);
+      try {
+        await deleteUser(userToDelete);
+        setUserToDelete(null);
+        setDeleteDialogOpen(false);
+      } catch (error) {
+        // Error handled in hook
+      }
     }
   };
 
@@ -155,36 +192,46 @@ export default function AdminUsers() {
     setEmailDialogOpen(true);
   };
 
-  const toggleUserSelection = (userId: string) => {
+  const toggleUserSelection = (user: any) => {
+    const userId = user._id || user.id;
     setSelectedUsers((prev) =>
       prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
     );
   };
 
   const toggleAllUsers = () => {
-    setSelectedUsers(selectedUsers.length === paginatedItems.length ? [] : paginatedItems.map((u) => u.id));
+    setSelectedUsers(selectedUsers.length === paginatedItems.length ? [] : paginatedItems.map((u) => u._id || u.id));
   };
 
   const handleBulkAction = async (action: string, data?: any) => {
-    const selectedUserData = users.filter((u) => selectedUsers.includes(u.id));
-
-    switch (action) {
-      case "activate":
-        await Promise.all(selectedUsers.map((id) => updateUser(id, { status: "Active" })));
-        break;
-      case "suspend":
-        await Promise.all(selectedUsers.map((id) => updateUser(id, { status: "Suspended" })));
-        break;
-      case "delete":
-        await Promise.all(selectedUsers.map((id) => deleteUser(id)));
-        break;
-      case "email":
-        // Simulate sending bulk email
-        console.log("Sending bulk email:", data);
-        break;
+    try {
+      switch (action) {
+        case "activate":
+          await Promise.all(selectedUsers.map((id) => activateUser(id)));
+          toast({ title: "Users activated", description: `${selectedUsers.length} users activated` });
+          break;
+        case "suspend":
+          await Promise.all(selectedUsers.map((id) => suspendUser(id, "Bulk suspension")));
+          toast({ title: "Users suspended", description: `${selectedUsers.length} users suspended` });
+          break;
+        case "delete":
+          await Promise.all(selectedUsers.map((id) => deleteUser(id)));
+          toast({ title: "Users deleted", description: `${selectedUsers.length} users deleted` });
+          break;
+        case "email":
+          // Simulate sending bulk email
+          console.log("Sending bulk email:", data);
+          toast({ title: "Email sent", description: `Email sent to ${selectedUsers.length} users` });
+          break;
+      }
+      setSelectedUsers([]);
+    } catch (error) {
+      toast({
+        title: "Bulk action failed",
+        description: "Some users could not be updated",
+        variant: "destructive"
+      });
     }
-
-    setSelectedUsers([]);
   };
 
   const handleSort = (field: string) => {

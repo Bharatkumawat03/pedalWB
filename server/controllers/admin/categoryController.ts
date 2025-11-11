@@ -22,7 +22,7 @@ export const getCategories = async (req: AuthenticatedRequest, res: Response, ne
     }
 
     if (req.query.isActive !== undefined) {
-      filter.isActive = req.query.isActive === 'true';
+      filter.status = req.query.isActive === 'true' ? 'active' : 'inactive';
     }
 
     // Build sort object
@@ -85,6 +85,14 @@ export const createCategory = async (req: AuthenticatedRequest, res: Response, n
   try {
     const { name, description, icon, isActive = true } = req.body;
 
+    if (!name) {
+      res.status(400).json({
+        success: false,
+        message: 'Category name is required'
+      });
+      return;
+    }
+
     // Check if category already exists
     const existingCategory = await Category.findOne({ name });
     if (existingCategory) {
@@ -95,18 +103,26 @@ export const createCategory = async (req: AuthenticatedRequest, res: Response, n
       return;
     }
 
+    // Create category with status field (derived from isActive)
     const category = await Category.create({
       name,
       description,
-      icon,
-      isActive
+      icon: icon || '🏷️',
+      status: isActive ? 'active' : 'inactive'
     });
 
     res.status(201).json({
       success: true,
       data: category
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.name === 'ValidationError') {
+      res.status(400).json({
+        success: false,
+        message: error.message
+      });
+      return;
+    }
     next(error);
   }
 };
@@ -116,9 +132,19 @@ export const createCategory = async (req: AuthenticatedRequest, res: Response, n
 // @access  Private/Admin
 export const updateCategory = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const { name, description, icon, isActive } = req.body;
+    const updateData: any = {};
+
+    if (name) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (icon) updateData.icon = icon;
+    if (isActive !== undefined) {
+      updateData.status = isActive ? 'active' : 'inactive';
+    }
+
     const category = await Category.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateData,
       { new: true, runValidators: true }
     );
 
@@ -134,7 +160,14 @@ export const updateCategory = async (req: AuthenticatedRequest, res: Response, n
       success: true,
       data: category
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.name === 'ValidationError') {
+      res.status(400).json({
+        success: false,
+        message: error.message
+      });
+      return;
+    }
     next(error);
   }
 };
@@ -178,7 +211,14 @@ export const toggleCategoryStatus = async (req: AuthenticatedRequest, res: Respo
       return;
     }
 
-    category.status = category.status === 'active' ? 'inactive' : 'active';
+    // Toggle status - handle both status and isActive fields
+    if (category.status) {
+      category.status = category.status === 'active' ? 'inactive' : 'active';
+    } else {
+      // If using isActive field instead
+      (category as any).isActive = !(category as any).isActive;
+      category.status = (category as any).isActive ? 'active' : 'inactive';
+    }
     await category.save();
 
     res.json({

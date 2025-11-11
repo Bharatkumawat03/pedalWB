@@ -11,14 +11,15 @@ import { ProductsTable } from "@/components/admin/products/ProductsTable";
 import { PaginationControls } from "@/components/admin/PaginationControls";
 import { TableSkeleton } from "@/components/admin/TableSkeleton";
 import { StatsCard } from "@/components/admin/StatsCard";
-import { useAdminData } from "@/hooks/useAdminData";
+import { useProducts } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/useDebounce";
-import { usePagination } from "@/hooks/usePagination";
 import { Package, DollarSign, TrendingUp, AlertTriangle, Star } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 export default function AdminProducts() {
+  console.log('AdminProducts component rendering');
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -41,11 +42,15 @@ export default function AdminProducts() {
     products,
     categories,
     loading,
+    currentPage,
+    totalPages,
+    totalProducts,
+    fetchProducts,
     createProduct,
     updateProduct,
     deleteProduct,
-    searchProducts
-  } = useAdminData();
+    bulkDeleteProducts,
+  } = useProducts();
   
   const { toast } = useToast();
   
@@ -54,37 +59,61 @@ export default function AdminProducts() {
 
   // Get unique brands
   const brands = useMemo(() => {
-    const uniqueBrands = [...new Set(products.map(p => p.brand))];
+    const uniqueBrands = [...new Set(products.map(p => p.brand).filter(Boolean))];
     return uniqueBrands.sort();
   }, [products]);
 
   // Calculate stats
   const stats = useMemo(() => {
-    const totalProducts = products.length;
-    const activeProducts = products.filter(p => p.status === 'Active').length;
-    const lowStockProducts = products.filter(p => p.stock < 10).length;
+    const totalProductsCount = products.length;
+    const activeProducts = products.filter(p => p.status === 'Active' || p.inventory?.inStock).length;
+    const lowStockProducts = products.filter(p => {
+      const stock = p.stock || p.inventory?.quantity || 0;
+      return stock < 10 && stock > 0;
+    }).length;
     const featuredProducts = products.filter(p => p.featured).length;
-    const totalValue = products.reduce((sum, p) => sum + (p.price * p.stock), 0);
+    const totalValue = products.reduce((sum, p) => {
+      const stock = p.stock || p.inventory?.quantity || 0;
+      return sum + (p.price * stock);
+    }, 0);
     const avgPrice = products.length > 0 ? products.reduce((sum, p) => sum + p.price, 0) / products.length : 0;
     
     return {
-      totalProducts,
+      totalProducts: totalProductsCount,
       activeProducts,
       lowStockProducts,
       featuredProducts,
       totalValue,
       avgPrice,
-      activePercentage: totalProducts > 0 ? (activeProducts / totalProducts) * 100 : 0,
+      activePercentage: totalProductsCount > 0 ? (activeProducts / totalProductsCount) * 100 : 0,
     };
   }, [products]);
 
   // Filter products with memoization
   const filteredProducts = useMemo(() => {
-    let filtered = searchProducts(debouncedSearchTerm, selectedCategory);
+    let filtered = [...products];
+    
+    // Apply search filter
+    if (debouncedSearchTerm) {
+      filtered = filtered.filter(p => 
+        p.name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        p.description?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        p.brand?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+      );
+    }
+    
+    // Apply category filter
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter(p => p.category === selectedCategory);
+    }
     
     // Apply filters
     if (statusFilter !== "all") {
-      filtered = filtered.filter(p => p.status === statusFilter);
+      filtered = filtered.filter(p => {
+        if (statusFilter === 'Active') return p.status === 'Active' || p.inventory?.inStock;
+        if (statusFilter === 'Draft') return p.status === 'Draft';
+        return p.status === statusFilter;
+      });
     }
     if (brandFilter !== "all") {
       filtered = filtered.filter(p => p.brand === brandFilter);
@@ -116,24 +145,31 @@ export default function AdminProducts() {
         return aVal < bVal ? 1 : -1;
       }
     });
-  }, [debouncedSearchTerm, selectedCategory, statusFilter, brandFilter, featuredFilter, priceRangeFilter, sortBy, sortOrder, products, searchProducts]);
+  }, [debouncedSearchTerm, selectedCategory, statusFilter, brandFilter, featuredFilter, priceRangeFilter, sortBy, sortOrder, products]);
+
+  // Reset to page 1 when filters change and refetch
+  useEffect(() => {
+    const filters: any = {};
+    if (debouncedSearchTerm) filters.search = debouncedSearchTerm;
+    if (selectedCategory !== "all") filters.category = selectedCategory;
+    if (statusFilter !== "all") filters.status = statusFilter;
+    if (brandFilter !== "all") filters.brand = brandFilter;
+    if (featuredFilter === "featured") filters.isFeatured = true;
+    if (sortBy) filters.sortBy = sortBy;
+    if (sortOrder) filters.sortOrder = sortOrder;
+    
+    fetchProducts(1, itemsPerPage, filters);
+  }, [debouncedSearchTerm, selectedCategory, statusFilter, brandFilter, featuredFilter, sortBy, sortOrder, itemsPerPage]);
 
   // Pagination
-  const {
-    currentPage,
-    totalPages,
-    paginatedItems,
-    goToPage,
-    startIndex,
-    endIndex,
-    totalItems,
-    resetPage
-  } = usePagination(filteredProducts, itemsPerPage);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    resetPage();
-  }, [debouncedSearchTerm, selectedCategory, statusFilter, brandFilter, featuredFilter, priceRangeFilter, resetPage]);
+  const paginatedItems = filteredProducts.slice(0, itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage + 1;
+  const endIndex = Math.min(currentPage * itemsPerPage, filteredProducts.length);
+  const totalItems = filteredProducts.length;
+  
+  const goToPage = (page: number) => {
+    fetchProducts(page, itemsPerPage);
+  };
 
   const handleSort = (field: string) => {
     if (sortBy === field) {
@@ -145,20 +181,36 @@ export default function AdminProducts() {
   };
 
   const handleCreateProduct = async (data: any) => {
-    await createProduct(data);
+    try {
+      await createProduct(data);
+      setProductFormOpen(false);
+    } catch (error) {
+      // Error handled in hook
+    }
   };
 
   const handleUpdateProduct = async (data: any) => {
     if (editingProduct) {
-      await updateProduct(editingProduct.id, data);
-      setEditingProduct(null);
+      try {
+        const productId = editingProduct._id || editingProduct.id;
+        await updateProduct(productId, data);
+        setEditingProduct(null);
+        setProductFormOpen(false);
+      } catch (error) {
+        // Error handled in hook
+      }
     }
   };
 
   const handleDeleteProduct = async () => {
     if (productToDelete) {
-      await deleteProduct(productToDelete);
-      setProductToDelete(null);
+      try {
+        await deleteProduct(productToDelete);
+        setProductToDelete(null);
+        setDeleteDialogOpen(false);
+      } catch (error) {
+        // Error handled in hook
+      }
     }
   };
 
@@ -193,7 +245,8 @@ export default function AdminProducts() {
     setShowProductDetails(true);
   };
 
-  const toggleProductSelection = (productId: string) => {
+  const toggleProductSelection = (product: any) => {
+    const productId = product._id || product.id;
     setSelectedProducts(prev => 
       prev.includes(productId) 
         ? prev.filter(id => id !== productId)
@@ -203,7 +256,7 @@ export default function AdminProducts() {
 
   const toggleAllProducts = () => {
     setSelectedProducts(
-      selectedProducts.length === paginatedItems.length ? [] : paginatedItems.map(p => p.id)
+      selectedProducts.length === paginatedItems.length ? [] : paginatedItems.map(p => p._id || p.id)
     );
   };
 
@@ -213,15 +266,15 @@ export default function AdminProducts() {
     try {
       switch (action) {
         case 'activate':
-          await Promise.all(selectedProducts.map(id => updateProduct(id, { status: 'Active' })));
+          await Promise.all(selectedProducts.map(id => updateProduct(id, { status: 'active', inStock: true })));
           toast({ title: "Products activated", description: `${selectedProducts.length} products activated` });
           break;
         case 'deactivate':
-          await Promise.all(selectedProducts.map(id => updateProduct(id, { status: 'Draft' })));
+          await Promise.all(selectedProducts.map(id => updateProduct(id, { status: 'inactive', inStock: false })));
           toast({ title: "Products deactivated", description: `${selectedProducts.length} products deactivated` });
           break;
         case 'delete':
-          await Promise.all(selectedProducts.map(id => deleteProduct(id)));
+          await bulkDeleteProducts(selectedProducts);
           toast({ title: "Products deleted", description: `${selectedProducts.length} products deleted` });
           break;
       }
@@ -237,17 +290,14 @@ export default function AdminProducts() {
 
   const toggleProductFeature = async (productId: string, currentFeatured: boolean) => {
     try {
+      // Use featured field which matches the Product model
       await updateProduct(productId, { featured: !currentFeatured });
       toast({
         title: currentFeatured ? "Removed from featured" : "Added to featured",
         description: `Product ${currentFeatured ? 'removed from' : 'added to'} featured list`,
       });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update product feature status",
-        variant: "destructive"
-      });
+      // Error handled in hook
     }
   };
 
@@ -267,10 +317,10 @@ export default function AdminProducts() {
   };
 
   const duplicateProduct = async (product: any) => {
+    const { _id, id, __v, createdAt, updatedAt, ...productData } = product;
     const duplicatedProduct = {
-      ...product,
+      ...productData,
       name: `${product.name} (Copy)`,
-      id: undefined // Let the system generate a new ID
     };
     
     try {
@@ -280,11 +330,7 @@ export default function AdminProducts() {
         description: "Product has been successfully duplicated",
       });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to duplicate product",
-        variant: "destructive"
-      });
+      // Error handled in hook
     }
   };
 
@@ -347,7 +393,7 @@ export default function AdminProducts() {
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Avg Stock/Product</p>
-                <p className="text-2xl font-bold">{products.length > 0 ? Math.round(products.reduce((sum, p) => sum + p.stock, 0) / products.length) : 0}</p>
+                <p className="text-2xl font-bold">{products.length > 0 ? Math.round(products.reduce((sum, p) => sum + (p.stock || p.inventory?.quantity || 0), 0) / products.length) : 0}</p>
               </div>
             </div>
           </CardContent>
@@ -395,7 +441,10 @@ export default function AdminProducts() {
                 <ProductsTable
                   products={paginatedItems}
                   selectedProducts={selectedProducts}
-                  onToggleProduct={toggleProductSelection}
+                  onToggleProduct={(id) => {
+                    const product = paginatedItems.find(p => (p._id || p.id) === id);
+                    if (product) toggleProductSelection(product);
+                  }}
                   onToggleAll={toggleAllProducts}
                   onViewDetails={handleViewDetails}
                   onEdit={openEditForm}

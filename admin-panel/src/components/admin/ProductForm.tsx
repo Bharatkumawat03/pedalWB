@@ -1,4 +1,5 @@
 import { useState } from "react";
+import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -57,13 +58,35 @@ interface ProductFormProps {
   loading?: boolean;
 }
 
+// Map frontend category names to backend enum values
+const categoryMap: Record<string, string> = {
+  "Mountain Bikes": "bikes",
+  "Road Bikes": "bikes",
+  "City Bikes": "bikes",
+  "Electric Bikes": "bikes",
+  "Kids Bikes": "bikes",
+  "Accessories": "accessories",
+  "Drivetrain": "drivetrain",
+  "Wheels": "wheels",
+  "Brakes": "brakes",
+  "Components": "components",
+  "Apparel": "apparel",
+  "Electronics": "electronics",
+  "Maintenance": "maintenance",
+  "Safety": "safety"
+};
+
 const categories = [
-  "Mountain Bikes",
-  "Road Bikes", 
-  "City Bikes",
-  "Electric Bikes",
-  "Kids Bikes",
-  "Accessories"
+  "bikes",
+  "drivetrain",
+  "wheels",
+  "brakes",
+  "components",
+  "accessories",
+  "apparel",
+  "electronics",
+  "maintenance",
+  "safety"
 ];
 
 const brands = [
@@ -83,19 +106,69 @@ export function ProductForm({ open, onOpenChange, product, onSubmit, loading }: 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name: product?.name || "",
-      description: product?.description || "",
-      price: product?.price || 0,
-      originalPrice: product?.originalPrice || undefined,
-      category: product?.category || "",
-      brand: product?.brand || "",
-      stock: product?.stock || 0,
-      images: product?.images || [],
-      features: product?.features || [],
-      isFeatured: product?.featured || false,
-      isNew: product?.isNew || false
+      name: "",
+      description: "",
+      price: 0,
+      originalPrice: undefined,
+      category: "",
+      brand: "",
+      stock: 0,
+      images: [],
+      features: [],
+      isFeatured: false,
+      isNew: false
     }
   });
+
+  // Reset form when product changes (for editing)
+  React.useEffect(() => {
+    if (product) {
+      // Handle images - could be array of strings or array of objects with url property
+      const images = product.images 
+        ? product.images.map((img: any) => typeof img === 'string' ? img : img.url || img)
+        : [];
+      
+      // Handle inventory - could be stock, inventory.quantity, or inventory.quantity
+      const stock = product.inventory?.quantity || product.stock || product.inventory?.stock || 0;
+      
+      // Handle category - could be string ID or object with _id
+      let category = typeof product.category === 'object' 
+        ? (product.category._id || product.category.id || product.category.name || '')
+        : (product.category || '');
+      
+      // If category is a mapped name, convert it back to enum value if needed
+      // Otherwise keep as is (should already be enum value from backend)
+      
+      form.reset({
+        name: product.name || "",
+        description: product.description || "",
+        price: product.price || 0,
+        originalPrice: product.originalPrice || undefined,
+        category: category,
+        brand: product.brand || "",
+        stock: stock,
+        images: images,
+        features: product.features || [],
+        isFeatured: product.featured || false,
+        isNew: product.isNew || false
+      });
+    } else {
+      // Reset to empty form for new product
+      form.reset({
+        name: "",
+        description: "",
+        price: 0,
+        originalPrice: undefined,
+        category: "",
+        brand: "",
+        stock: 0,
+        images: [],
+        features: [],
+        isFeatured: false,
+        isNew: false
+      });
+    }
+  }, [product, form]);
 
   const handleSubmit = async (data: ProductFormData) => {
     try {
@@ -175,7 +248,7 @@ export function ProductForm({ open, onOpenChange, product, onSubmit, loading }: 
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Brand</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select brand" />
@@ -264,7 +337,7 @@ export function ProductForm({ open, onOpenChange, product, onSubmit, loading }: 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select category" />
@@ -273,7 +346,7 @@ export function ProductForm({ open, onOpenChange, product, onSubmit, loading }: 
                     <SelectContent>
                       {categories.map((category) => (
                         <SelectItem key={category} value={category}>
-                          {category}
+                          {category.charAt(0).toUpperCase() + category.slice(1)}
                         </SelectItem>
                       ))}
                     </SelectContent>

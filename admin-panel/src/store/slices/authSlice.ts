@@ -24,9 +24,13 @@ export const loginAdmin = createAsyncThunk(
   async (credentials: LoginForm, { rejectWithValue }) => {
     try {
       const response = await authService.login(credentials);
+      if (!response || !response.success) {
+        return rejectWithValue(response?.message || 'Login failed');
+      }
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.message);
+      const message = error?.response?.data?.message || error?.message || 'Login failed';
+      return rejectWithValue(message);
     }
   }
 );

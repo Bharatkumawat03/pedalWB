@@ -98,8 +98,8 @@ const HeroCarousel = () => {
   }, [api]);
 
   return (
-    <section className="relative min-h-[90vh] overflow-hidden">
-      <Carousel 
+    <section className="relative min-h-[300px] md:min-h-[350px] lg:min-h-[400px] overflow-hidden">
+      <Carousel
         setApi={setApi}
         opts={{
           align: "start",
@@ -110,7 +110,7 @@ const HeroCarousel = () => {
         <CarouselContent className="-ml-0">
           {slides.map((slide) => (
             <CarouselItem key={slide.id} className="pl-0">
-              <div className="relative min-h-[90vh] flex items-center bg-gradient-hero overflow-hidden">
+              <div className="relative min-h-[300px] md:min-h-[350px] lg:min-h-[400px] flex items-center bg-gradient-hero overflow-hidden">
                 {/* Background Image */}
                 <div className="absolute inset-0 z-0">
                   <img
@@ -121,44 +121,44 @@ const HeroCarousel = () => {
                   <div className="absolute inset-0 bg-gradient-to-r from-background via-background/60 to-transparent" />
                 </div>
 
-                <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-                  <div className="grid lg:grid-cols-2 gap-12 items-center">
+                <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 lg:py-20">
+                  <div className="grid lg:grid-cols-2 gap-6 md:gap-12 items-center">
                     {/* Hero Content */}
-                    <div className="space-y-8 animate-fade-in">
-                      <div className="space-y-4">
-                        <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+                    <div className="space-y-4 md:space-y-8 animate-fade-in">
+                      <div className="space-y-2 md:space-y-4">
+                        <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 text-xs md:text-sm">
                           {slide.badge.icon} {slide.badge.text}
                         </Badge>
                         
-                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+                        <h1 className="text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
                           <span className="text-foreground">{slide.title}</span>
                           <br />
                           <span className="text-primary">{slide.subtitle}</span>
                         </h1>
                         
-                        <p className="text-xl text-muted-foreground max-w-2xl leading-relaxed">
+                        <p className="text-sm md:text-lg lg:text-xl text-muted-foreground max-w-2xl leading-relaxed">
                           {slide.description}
                         </p>
                       </div>
 
                       {/* CTA Buttons */}
-                      <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="flex flex-col sm:flex-row gap-2 md:gap-4">
                         <Link to="/shop">
-                          <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 text-lg shadow-green hover:shadow-hover transition-all duration-300">
+                          <Button size="default" className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 md:px-8 py-2 md:py-3 text-sm md:text-lg shadow-green hover:shadow-hover transition-all duration-300 w-full sm:w-auto">
                             Shop Collections
-                            <ArrowRight className="ml-2 w-5 h-5" />
+                            <ArrowRight className="ml-2 w-4 h-4 md:w-5 md:h-5" />
                           </Button>
                         </Link>
                         
-                        <Link to="/categories">
-                          <Button variant="outline" size="lg" className="border-border hover:border-primary hover:bg-primary/5 px-8 py-3 text-lg">
+                        <Link to="/categories" className="hidden sm:block">
+                          <Button variant="outline" size="default" className="border-border hover:border-primary hover:bg-primary/5 px-4 md:px-8 py-2 md:py-3 text-sm md:text-lg">
                             Explore Categories
                           </Button>
                         </Link>
                       </div>
 
                       {/* Stats */}
-                      <div className="grid grid-cols-3 gap-6 pt-8 border-t border-border/50">
+                      <div className="hidden md:grid grid-cols-3 gap-6 pt-8 border-t border-border/50">
                         {slide.stats.map((stat, index) => (
                           <div key={index} className="text-center group">
                             <div className="flex items-center justify-center mb-2">

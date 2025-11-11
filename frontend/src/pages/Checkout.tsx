@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import { RootState } from '@/store/store';
+import { RootState, AppDispatch } from '@/store/store';
 import { clearCart } from '@/store/slices/cartSlice';
+import orderService from '@/services/orderService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,10 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, CreditCard, Truck, Shield, CheckCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const cart = useSelector((state: RootState) => state.cart);
   
   const [step, setStep] = useState(1);
@@ -40,17 +42,103 @@ const Checkout = () => {
   });
 
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [orderNumber, setOrderNumber] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate order processing
-    setTimeout(() => {
-      setOrderPlaced(true);
-      dispatch(clearCart());
-      setTimeout(() => {
-        navigate('/account');
-      }, 3000);
-    }, 2000);
+    
+    if (cart.items.length === 0) {
+      toast.error('Your cart is empty');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Calculate totals
+      const subtotal = cart.total;
+      const shipping = subtotal >= 2000 ? 0 : 99;
+      const tax = Math.round(subtotal * 0.18);
+      const totalAmount = subtotal + shipping + tax;
+
+      // Map cart items to order items format
+      const orderItems = cart.items.map(item => ({
+        product: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity
+      }));
+
+      // Map address format
+      const shippingAddress = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.pincode,
+        country: formData.country
+      };
+
+      // Map payment method to backend enum values
+      let paymentMethod: 'card' | 'upi' | 'netbanking' | 'wallet' | 'cod' = 'cod';
+      if (formData.paymentMethod === 'card') {
+        paymentMethod = 'card';
+      } else if (formData.paymentMethod === 'upi') {
+        paymentMethod = 'upi';
+      } else {
+        paymentMethod = 'cod';
+      }
+
+      // Create order data
+      const orderData = {
+        items: orderItems,
+        shippingAddress,
+        billingAddress: shippingAddress, // Using same address for billing
+        paymentMethod,
+        subtotal,
+        tax,
+        shipping,
+        discount: 0,
+        totalAmount,
+        notes: formData.notes || undefined
+      };
+
+      // Call API to create order
+      const response = await orderService.createOrder(orderData);
+      
+      if (response.success && response.data) {
+        setOrderNumber(response.data.orderNumber || '');
+        setOrderPlaced(true);
+        dispatch(clearCart());
+        toast.success('Order placed successfully!');
+        
+        // For guest users, clear localStorage cart
+        const isAuthenticated = !!localStorage.getItem('token');
+        if (!isAuthenticated) {
+          localStorage.removeItem('guest_cart');
+        }
+        
+        // Redirect based on authentication status
+        setTimeout(() => {
+          if (isAuthenticated) {
+            navigate('/account');
+          } else {
+            navigate('/');
+          }
+        }, 3000);
+      } else {
+        throw new Error(response.message || 'Failed to place order');
+      }
+    } catch (error: any) {
+      console.error('Error placing order:', error);
+      toast.error(error.response?.data?.message || error.message || 'Failed to place order. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (cart.items.length === 0 && !orderPlaced) {
@@ -76,15 +164,35 @@ const Checkout = () => {
           <div className="max-w-2xl mx-auto text-center">
             <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-6" />
             <h1 className="text-3xl font-bold text-foreground mb-4">Order Placed Successfully!</h1>
+            {orderNumber && (
+              <p className="text-lg text-muted-foreground mb-2">
+                Order Number: <span className="font-bold text-foreground">{orderNumber}</span>
+              </p>
+            )}
             <p className="text-lg text-muted-foreground mb-6">
               Thank you for your order. You will receive a confirmation email shortly.
             </p>
             <p className="text-sm text-muted-foreground mb-6">
-              Redirecting to your account in 3 seconds...
+              {localStorage.getItem('token') 
+                ? 'Redirecting to your account in 3 seconds...'
+                : 'Redirecting to home in 3 seconds...'}
             </p>
-            <Button asChild>
-              <Link to="/account">View Orders</Link>
-            </Button>
+            <div className="flex gap-4 justify-center">
+              {localStorage.getItem('token') ? (
+                <Button asChild>
+                  <Link to="/account">View Orders</Link>
+                </Button>
+              ) : (
+                <>
+                  <Button asChild>
+                    <Link to="/">Continue Shopping</Link>
+                  </Button>
+                  <Button asChild variant="outline">
+                    <Link to="/login">Sign In to Track Order</Link>
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -344,8 +452,9 @@ const Checkout = () => {
                     onClick={handleSubmit}
                     className="w-full bg-primary hover:bg-primary/90"
                     size="lg"
+                    disabled={isSubmitting}
                   >
-                    Place Order
+                    {isSubmitting ? 'Placing Order...' : 'Place Order'}
                   </Button>
 
                   <p className="text-xs text-muted-foreground text-center">

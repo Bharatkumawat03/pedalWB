@@ -1,5 +1,5 @@
 import api from '@/lib/api/config';
-import { User, UserForm, UserFilters } from '@/types';
+import { User, UserForm, UserFilters } from '@/types/index';
 
 interface PaginatedResponse<T> {
   data: T[];
@@ -31,26 +31,53 @@ class UserService {
       });
     }
 
-    const response = await api.get(`/admin/users?${params.toString()}`);
-    return response.data;
+    // API interceptor returns { success: true, data: [...], pagination: {...} }
+    const response = await api.get(`/admin/users?${params.toString()}`) as any;
+    // Return structure expected by hooks: { data: [...], pagination: {...} }
+    return {
+      data: response.data || [],
+      pagination: response.pagination || { page: 1, limit: 10, total: 0, pages: 1 }
+    };
   }
 
   // Get single user
   async getUser(id: string): Promise<User> {
-    const response = await api.get(`/admin/users/${id}`);
-    return response.data.data;
+    const response = await api.get(`/admin/users/${id}`) as any;
+    return response.data || response;
   }
 
   // Create new user
   async createUser(userData: UserForm): Promise<User> {
-    const response = await api.post('/admin/users', userData);
-    return response.data.data;
+    // Transform frontend format to backend format
+    const transformedData: any = {
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      email: userData.email,
+      phone: userData.phone || '',
+      role: userData.role === 'Admin' ? 'admin' : 'user',
+      status: userData.status.toLowerCase() as 'active' | 'inactive' | 'suspended',
+      password: 'defaultPassword123', // Default password - should be changed by user
+      emailVerified: false
+    };
+
+    const response = await api.post('/admin/users', transformedData) as any;
+    return response.data || response;
   }
 
   // Update user
   async updateUser(id: string, userData: Partial<UserForm>): Promise<User> {
-    const response = await api.put(`/admin/users/${id}`, userData);
-    return response.data.data;
+    // Transform frontend format to backend format
+    const transformedData: any = {};
+
+    if (userData.firstName !== undefined) transformedData.firstName = userData.firstName;
+    if (userData.lastName !== undefined) transformedData.lastName = userData.lastName;
+    if (userData.email !== undefined) transformedData.email = userData.email;
+    if (userData.phone !== undefined) transformedData.phone = userData.phone;
+    if (userData.role !== undefined) transformedData.role = userData.role === 'Admin' ? 'admin' : 'user';
+    if (userData.status !== undefined) transformedData.status = userData.status.toLowerCase() as 'active' | 'inactive' | 'suspended';
+
+    const response = await api.put(`/admin/users/${id}`, transformedData) as any;
+    return response.data || response;
   }
 
   // Delete user
@@ -60,20 +87,20 @@ class UserService {
 
   // Suspend user
   async suspendUser(id: string, reason: string): Promise<User> {
-    const response = await api.patch(`/admin/users/${id}/suspend`, { reason });
-    return response.data.data;
+    const response = await api.patch(`/admin/users/${id}/suspend`, { reason }) as any;
+    return response.data || response;
   }
 
   // Activate user
   async activateUser(id: string): Promise<User> {
-    const response = await api.patch(`/admin/users/${id}/activate`);
-    return response.data.data;
+    const response = await api.patch(`/admin/users/${id}/activate`) as any;
+    return response.data || response;
   }
 
   // Get user analytics
   async getUserAnalytics(period: '7d' | '30d' | '90d' | '1y' = '30d') {
-    const response = await api.get(`/admin/users/analytics?period=${period}`);
-    return response.data.data;
+    const response = await api.get(`/admin/users/analytics?period=${period}`) as any;
+    return response.data || response;
   }
 
   // Export users

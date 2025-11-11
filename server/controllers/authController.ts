@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from '../types';
 import authService from '../services/authService';
 import User from '../models/User';
+import { OAuth2Client } from 'google-auth-library';
 
 // Send token response
 const sendTokenResponse = (user: any, token: string, statusCode: number, res: Response, message = 'Success'): void => {
@@ -206,6 +207,31 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
   }
 };
 
+// @desc    Google OAuth login/register
+// @route   POST /api/auth/google
+// @access  Public
+export const googleAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { tokenId } = req.body;
+
+    if (!tokenId) {
+      res.status(400).json({
+        success: false,
+        message: 'Google token ID is required'
+      });
+      return;
+    }
+
+    const result = await authService.googleAuth(tokenId);
+    sendTokenResponse(result.user, result.token, 200, res, 'Google authentication successful');
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Google authentication failed'
+    });
+  }
+};
+
 export default {
   register,
   login,
@@ -214,5 +240,6 @@ export default {
   updateDetails,
   updatePassword,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  googleAuth
 };

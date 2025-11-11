@@ -12,16 +12,34 @@ const Cart = () => {
   const dispatch = useDispatch();
   const { items, total, itemCount } = useSelector((state: RootState) => state.cart);
 
-  const handleUpdateQuantity = (id: string, newQuantity: number) => {
-    dispatch(updateQuantity({ id, quantity: newQuantity }));
+  const handleUpdateQuantity = async (item: any, newQuantity: number) => {
+    const itemId = item.cartItemId || item.id;
+    if (itemId) {
+      try {
+        await dispatch(updateQuantity({ itemId, quantity: newQuantity })).unwrap();
+      } catch (error: any) {
+        console.error('Error updating quantity:', error);
+      }
+    }
   };
 
-  const handleRemoveItem = (id: string) => {
-    dispatch(removeFromCart(id));
+  const handleRemoveItem = async (item: any) => {
+    const itemId = item.cartItemId || item.id;
+    if (itemId) {
+      try {
+        await dispatch(removeFromCart(itemId)).unwrap();
+      } catch (error: any) {
+        console.error('Error removing item:', error);
+      }
+    }
   };
 
-  const handleClearCart = () => {
-    dispatch(clearCart());
+  const handleClearCart = async () => {
+    try {
+      await dispatch(clearCart()).unwrap();
+    } catch (error: any) {
+      console.error('Error clearing cart:', error);
+    }
   };
 
   if (items.length === 0) {
@@ -107,7 +125,7 @@ const Cart = () => {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                        onClick={() => handleUpdateQuantity(item, item.quantity - 1)}
                         disabled={item.quantity <= 1}
                         className="w-8 h-8"
                       >
@@ -119,7 +137,7 @@ const Cart = () => {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => handleUpdateQuantity(item, item.quantity + 1)}
                         className="w-8 h-8"
                       >
                         <Plus className="w-3 h-3" />
@@ -134,7 +152,7 @@ const Cart = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleRemoveItem(item.id)}
+                        onClick={() => handleRemoveItem(item)}
                         className="text-destructive hover:text-destructive hover:bg-destructive/10 mt-2"
                       >
                         <Trash2 className="w-4 h-4 mr-1" />

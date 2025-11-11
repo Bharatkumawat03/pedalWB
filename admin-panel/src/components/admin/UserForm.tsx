@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
@@ -57,14 +58,46 @@ export function UserForm({ open, onOpenChange, user, onSubmit, loading }: UserFo
   const form = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
-      firstName: user?.firstName || "",
-      lastName: user?.lastName || "",
-      email: user?.email || "",
-      phone: user?.phone || "",
-      role: user?.role || "Customer",
-      status: user?.status || "Active"
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      role: "Customer",
+      status: "Active"
     }
   });
+
+  // Reset form when user changes (for editing)
+  useEffect(() => {
+    if (user) {
+      // Map status - backend uses lowercase, frontend uses capitalized
+      const status = user.status 
+        ? (user.status.charAt(0).toUpperCase() + user.status.slice(1).toLowerCase())
+        : "Active";
+      
+      // Map role - backend uses lowercase 'user', frontend uses 'Customer'
+      const role = user.role === 'admin' ? 'Admin' : 'Customer';
+      
+      form.reset({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        role: role as "Admin" | "Customer",
+        status: status as "Active" | "Inactive" | "Suspended"
+      });
+    } else {
+      // Reset to empty form for new user
+      form.reset({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        role: "Customer",
+        status: "Active"
+      });
+    }
+  }, [user, form]);
 
   const handleSubmit = async (data: UserFormData) => {
     try {
@@ -161,7 +194,7 @@ export function UserForm({ open, onOpenChange, user, onSubmit, loading }: UserFo
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Role</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select role" />
@@ -183,7 +216,7 @@ export function UserForm({ open, onOpenChange, user, onSubmit, loading }: UserFo
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select status" />

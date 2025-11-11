@@ -10,19 +10,21 @@ interface AuthResponse {
 
 class AuthService {
   async login(credentials: LoginForm): Promise<AuthResponse> {
-    const response = await api.post('/admin/auth/login', credentials);
+    // The api interceptor already returns response.data, so response IS the data
+    const response = await api.post('/admin/auth/login', credentials) as any;
     
-    if (response.data.success && response.data.token) {
-      localStorage.setItem('admin_token', response.data.token);
-      localStorage.setItem('admin_user', JSON.stringify(response.data.user));
+    if (response && response.success && response.token) {
+      localStorage.setItem('admin_token', response.token);
+      localStorage.setItem('admin_user', JSON.stringify(response.user));
     }
     
-    return response.data;
+    return response;
   }
 
   async getCurrentUser(): Promise<User> {
-    const response = await api.get('/admin/auth/me');
-    return response.data.data;
+    // The api interceptor already returns response.data
+    const response = await api.get('/admin/auth/me') as any;
+    return response.data || response;
   }
 
   async logout(): Promise<void> {

@@ -19,18 +19,20 @@ const Wishlist = () => {
   const auth = useSelector((state: RootState) => state.auth);
   const isAuthenticated = auth?.isAuthenticated || false;
   
-  const handleRemoveFromWishlist = (productId: string) => {
-    dispatch(removeFromWishlist(productId));
+  const handleRemoveFromWishlist = async (productId: string) => {
+    try {
+      await dispatch(removeFromWishlist(productId)).unwrap();
+    } catch (error: any) {
+      console.error('Error removing from wishlist:', error);
+    }
   };
 
-  const handleAddToCart = (item: any) => {
-    dispatch(addToCart({
-      id: item.id,
-      name: item.name,
-      price: item.price,
-      image: item.image,
-      category: item.category
-    }));
+  const handleAddToCart = async (item: any) => {
+    try {
+      await dispatch(addToCart({ productId: item.id, quantity: 1 })).unwrap();
+    } catch (error: any) {
+      console.error('Error adding to cart:', error);
+    }
   };
 
   // Show login prompt if not authenticated

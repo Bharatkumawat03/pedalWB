@@ -77,26 +77,26 @@ const TestimonialsSection = () => {
   };
 
   return (
-    <section className="py-20 bg-background">
+    <section className="py-8 md:py-12 lg:py-14 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center mb-16">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Quote className="w-6 h-6 text-primary" />
-            <Badge className="bg-primary/10 text-primary border-primary/20">
+        <div className="text-center mb-6 md:mb-12">
+          <div className="flex items-center justify-center gap-2 md:gap-3 mb-2 md:mb-4">
+            <Quote className="w-4 h-4 md:w-6 md:h-6 text-primary" />
+            <Badge className="bg-primary/10 text-primary border-primary/20 text-xs md:text-sm">
               Testimonials
             </Badge>
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-foreground mb-2 md:mb-4">
             What Our Riders Say
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+          <p className="text-sm md:text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto">
             Trusted by thousands of cyclists worldwide, from weekend warriors to professional athletes
           </p>
         </div>
 
         {/* Testimonials Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-6">
           {testimonials.map((testimonial) => (
             <Card 
               key={testimonial.id}
@@ -106,36 +106,36 @@ const TestimonialsSection = () => {
               onMouseEnter={() => setHoveredCard(testimonial.id)}
               onMouseLeave={() => setHoveredCard(null)}
             >
-              <CardContent className="p-6">
+              <CardContent className="p-3 md:p-4 lg:p-6">
                 {/* Rating Stars */}
-                <div className="flex items-center gap-1 mb-4">
+                <div className="flex items-center gap-0.5 md:gap-1 mb-2 md:mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                    <Star key={i} className="w-3 h-3 md:w-4 md:h-4 fill-yellow-400 text-yellow-400" />
                   ))}
                 </div>
 
                 {/* Testimonial Text */}
-                <blockquote className="text-muted-foreground mb-6 leading-relaxed">
+                <blockquote className="text-xs md:text-sm lg:text-base text-muted-foreground mb-3 md:mb-6 leading-relaxed line-clamp-4 md:line-clamp-none">
                   "{testimonial.text}"
                 </blockquote>
 
                 {/* User Info */}
-                <div className="flex items-center gap-3 mb-4">
-                  <Avatar className="w-10 h-10 border-2 border-primary/20">
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-4">
+                  <Avatar className="w-8 h-8 md:w-10 md:h-10 border-2 border-primary/20">
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs md:text-sm">
                       {testimonial.avatar}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="font-semibold text-foreground">{testimonial.name}</div>
-                    <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                    <div className="font-semibold text-foreground text-xs md:text-sm">{testimonial.name}</div>
+                    <div className="text-[10px] md:text-xs text-muted-foreground">{testimonial.role}</div>
                   </div>
                 </div>
 
                 {/* Category Badge */}
                 <Badge 
                   variant="secondary" 
-                  className={`${getCategoryColor(testimonial.category)} text-xs`}
+                  className={`${getCategoryColor(testimonial.category)} text-[10px] md:text-xs`}
                 >
                   {testimonial.category}
                 </Badge>
@@ -148,11 +148,11 @@ const TestimonialsSection = () => {
         </div>
 
         {/* Call to Action */}
-        <div className="text-center mt-12">
-          <p className="text-muted-foreground mb-4">Join thousands of satisfied customers</p>
-          <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
+        <div className="text-center mt-6 md:mt-12">
+          <p className="text-xs md:text-base text-muted-foreground mb-3 md:mb-4">Join thousands of satisfied customers</p>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-8 text-xs md:text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
-              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+              <Star className="w-3 h-3 md:w-4 md:h-4 fill-yellow-400 text-yellow-400" />
               <span>4.9/5 Average Rating</span>
             </div>
             <div>50,000+ Happy Customers</div>

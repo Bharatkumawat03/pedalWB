@@ -18,13 +18,26 @@ class CategoryService {
   // Get all categories
   async getCategories(includeInactive = false): Promise<Category[]> {
     const params = includeInactive ? '?includeInactive=true' : '';
-    const response = await api.get(`/categories${params}`);
-    return response.data;
+    const response = await api.get(`/categories${params}`) as any;
+    // API interceptor returns response.data, so response is already the data
+    if (response.data && Array.isArray(response.data)) {
+      return response.data;
+    } else if (Array.isArray(response)) {
+      return response;
+    }
+    return [];
   }
 
-  // Get single category
+  // Get single category by slug
   async getCategory(slug: string): Promise<Category> {
-    const response = await api.get(`/categories/${slug}`);
+    const response = await api.get(`/categories/slug/${slug}`) as any;
+    // API interceptor returns response.data, so response is already the data
+    return response.data || response;
+  }
+
+  // Get single category by ID
+  async getCategoryById(id: string): Promise<Category> {
+    const response = await api.get(`/categories/${id}`);
     return response.data;
   }
 

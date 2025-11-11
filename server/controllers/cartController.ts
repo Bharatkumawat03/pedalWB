@@ -21,9 +21,31 @@ export const getCart = async (req: AuthenticatedRequest, res: Response, next: Ne
       return;
     }
 
+    // Calculate cart summary
+    const items = user.cart || [];
+    const itemCount = items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
+    const subtotal = items.reduce((sum: number, item: any) => {
+      const product = item.product || {};
+      return sum + ((product.price || 0) * (item.quantity || 0));
+    }, 0);
+    const tax = Math.round(subtotal * 0.18);
+    const shipping = subtotal >= 2000 ? 0 : 99;
+    const total = subtotal + tax + shipping;
+
     res.status(200).json({
       success: true,
-      data: user.cart
+      data: {
+        items: user.cart,
+        summary: {
+          itemCount,
+          subtotal,
+          tax,
+          shipping,
+          total,
+          freeShippingThreshold: 2000,
+          freeShippingEligible: subtotal >= 2000
+        }
+      }
     });
   } catch (error) {
     next(error);
@@ -48,7 +70,11 @@ export const addToCart = async (req: AuthenticatedRequest, res: Response, next: 
     }
 
     // Check if product is in stock
-    if (!product.inventory.inStock || product.inventory.quantity < quantity) {
+    const isInStock = product.isInStock !== false && 
+                     (product.inventory?.inStock !== false);
+    const availableQuantity = product.inventory?.quantity || 0;
+    
+    if (!isInStock || availableQuantity < quantity) {
       res.status(400).json({
         success: false,
         message: 'Product is out of stock'
@@ -77,7 +103,7 @@ export const addToCart = async (req: AuthenticatedRequest, res: Response, next: 
       existingCartItem.quantity += quantity;
       
       // Check if total quantity exceeds stock
-      if (existingCartItem.quantity > product.inventory.quantity) {
+      if (existingCartItem.quantity > availableQuantity) {
         res.status(400).json({
           success: false,
           message: 'Requested quantity exceeds available stock'
@@ -103,10 +129,32 @@ export const addToCart = async (req: AuthenticatedRequest, res: Response, next: 
       select: 'name price images brand category inventory'
     });
 
+    // Calculate cart summary
+    const items = user.cart || [];
+    const itemCount = items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
+    const subtotal = items.reduce((sum: number, item: any) => {
+      const product = item.product || {};
+      return sum + ((product.price || 0) * (item.quantity || 0));
+    }, 0);
+    const tax = Math.round(subtotal * 0.18);
+    const shipping = subtotal >= 2000 ? 0 : 99;
+    const total = subtotal + tax + shipping;
+
     res.status(200).json({
       success: true,
       message: 'Item added to cart successfully',
-      data: user.cart
+      data: {
+        items: user.cart,
+        summary: {
+          itemCount,
+          subtotal,
+          tax,
+          shipping,
+          total,
+          freeShippingThreshold: 2000,
+          freeShippingEligible: subtotal >= 2000
+        }
+      }
     });
   } catch (error) {
     next(error);
@@ -149,7 +197,11 @@ export const updateCartItem = async (req: AuthenticatedRequest, res: Response, n
         return;
       }
 
-      if (!product.inventory.inStock || quantity > product.inventory.quantity) {
+      const isInStock = product.isInStock !== false && 
+                       (product.inventory?.inStock !== false);
+      const availableQuantity = product.inventory?.quantity || 0;
+      
+      if (!isInStock || quantity > availableQuantity) {
         res.status(400).json({
           success: false,
           message: 'Requested quantity exceeds available stock'
@@ -171,10 +223,32 @@ export const updateCartItem = async (req: AuthenticatedRequest, res: Response, n
       select: 'name price images brand category inventory'
     });
 
+    // Calculate cart summary
+    const items = user.cart || [];
+    const itemCount = items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
+    const subtotal = items.reduce((sum: number, item: any) => {
+      const product = item.product || {};
+      return sum + ((product.price || 0) * (item.quantity || 0));
+    }, 0);
+    const tax = Math.round(subtotal * 0.18);
+    const shipping = subtotal >= 2000 ? 0 : 99;
+    const total = subtotal + tax + shipping;
+
     res.status(200).json({
       success: true,
       message: 'Cart item updated successfully',
-      data: user.cart
+      data: {
+        items: user.cart,
+        summary: {
+          itemCount,
+          subtotal,
+          tax,
+          shipping,
+          total,
+          freeShippingThreshold: 2000,
+          freeShippingEligible: subtotal >= 2000
+        }
+      }
     });
   } catch (error) {
     next(error);
@@ -213,10 +287,32 @@ export const removeFromCart = async (req: AuthenticatedRequest, res: Response, n
       select: 'name price images brand category inventory'
     });
 
+    // Calculate cart summary
+    const items = user.cart || [];
+    const itemCount = items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
+    const subtotal = items.reduce((sum: number, item: any) => {
+      const product = item.product || {};
+      return sum + ((product.price || 0) * (item.quantity || 0));
+    }, 0);
+    const tax = Math.round(subtotal * 0.18);
+    const shipping = subtotal >= 2000 ? 0 : 99;
+    const total = subtotal + tax + shipping;
+
     res.status(200).json({
       success: true,
       message: 'Item removed from cart successfully',
-      data: user.cart
+      data: {
+        items: user.cart,
+        summary: {
+          itemCount,
+          subtotal,
+          tax,
+          shipping,
+          total,
+          freeShippingThreshold: 2000,
+          freeShippingEligible: subtotal >= 2000
+        }
+      }
     });
   } catch (error) {
     next(error);
@@ -243,7 +339,18 @@ export const clearCart = async (req: AuthenticatedRequest, res: Response, next: 
     res.status(200).json({
       success: true,
       message: 'Cart cleared successfully',
-      data: user.cart
+      data: {
+        items: [],
+        summary: {
+          itemCount: 0,
+          subtotal: 0,
+          tax: 0,
+          shipping: 0,
+          total: 0,
+          freeShippingThreshold: 2000,
+          freeShippingEligible: false
+        }
+      }
     });
   } catch (error) {
     next(error);

@@ -7,9 +7,17 @@ import {
   updateProduct,
   deleteProduct,
   getFeaturedProducts,
+  getNewProducts,
+  getBestSellers,
   getProductsByCategory,
   getRelatedProducts
 } from '../controllers/productController';
+import {
+  getProductReviews,
+  canUserRate,
+  submitRating,
+  submitReview
+} from '../controllers/reviewController';
 import { protect, authorize } from '../middleware/auth';
 
 const router = express.Router();
@@ -17,46 +25,19 @@ const router = express.Router();
 // Public routes
 router.get('/', getProducts);
 router.get('/featured', getFeaturedProducts);
-router.get('/new', getFeaturedProducts); // Using featured for now
+router.get('/new', getNewProducts);
+router.get('/bestsellers', getBestSellers);
 router.get('/search', getProducts); // Using main getProducts for search
 router.get('/category/:category', getProductsByCategory);
 router.get('/slug/:slug', getProductBySlug);
 router.get('/:id', getProduct);
 router.get('/:id/related', getRelatedProducts);
-router.get('/:id/reviews', async (req, res, next) => {
-  try {
-    const Review = require('../models/Review').default;
-    const { page = 1, limit = 10, sort = 'newest' } = req.query;
-    
-    const sortOptions: any = {
-      newest: { createdAt: -1 },
-      oldest: { createdAt: 1 },
-      highest: { rating: -1 },
-      lowest: { rating: 1 }
-    };
-    
-    const reviews = await Review.find({ product: req.params.id })
-      .populate('user', 'firstName lastName avatar')
-      .sort(sortOptions[sort as string] || sortOptions.newest)
-      .limit(Number(limit))
-      .skip((Number(page) - 1) * Number(limit));
-    
-    const total = await Review.countDocuments({ product: req.params.id });
-    
-    res.json({
-      success: true,
-      data: reviews,
-      pagination: {
-        current: Number(page),
-        total: Math.ceil(total / Number(limit)),
-        count: reviews.length,
-        totalReviews: total
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/:id/reviews', getProductReviews);
+
+// Protected routes for rating/reviewing
+router.get('/:productId/can-rate', protect, canUserRate);
+router.post('/:productId/rate', protect, submitRating);
+router.post('/:productId/review', protect, submitReview);
 
 // Protected admin routes
 router.use(protect);

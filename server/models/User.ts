@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 export interface IAddress {
+  _id: mongoose.Types.ObjectId;
   type: 'home' | 'office' | 'other';
   firstName: string;
   lastName: string;
@@ -13,6 +14,12 @@ export interface IAddress {
   country: string;
   phone?: string;
   isDefault: boolean;
+  id(id: string): IAddress | undefined;
+  deleteOne(): void;
+}
+
+export interface IAddressArray extends Array<IAddress> {
+  id(id: string): IAddress | undefined;
 }
 
 export interface ICartItem {
@@ -25,8 +32,15 @@ export interface ICartItem {
 }
 
 export interface IWishlistItem {
+  _id: mongoose.Types.ObjectId;
   product: mongoose.Types.ObjectId;
   addedAt: Date;
+  id(id: string): IWishlistItem | undefined;
+  deleteOne(): void;
+}
+
+export interface IWishlistItemArray extends Array<IWishlistItem> {
+  id(id: string): IWishlistItem | undefined;
 }
 
 export interface IUserPreferences {
@@ -55,7 +69,7 @@ export interface IUser extends Document {
     url?: string;
     publicId?: string;
   };
-  addresses: IAddress[];
+  addresses: IAddressArray;
   preferences: IUserPreferences;
   role: 'user' | 'admin' | 'moderator';
   status: 'active' | 'inactive' | 'suspended';
@@ -67,9 +81,11 @@ export interface IUser extends Document {
   loginAttempts: number;
   lockUntil?: Date;
   lastLogin?: Date;
+  createdAt: Date;
+  updatedAt: Date;
   socialAuth?: ISocialAuth;
   cart: ICartItem[];
-  wishlist: IWishlistItem[];
+  wishlist: IWishlistItemArray;
   orderHistory: mongoose.Types.ObjectId[];
   loyaltyPoints: number;
   totalSpent: number;
@@ -393,7 +409,7 @@ userSchema.methods.addToWishlist = function(this: IUser, productId: string): Pro
     this.wishlist.push({ 
       product: new mongoose.Types.ObjectId(productId),
       addedAt: new Date()
-    });
+    } as any);
     return this.save();
   }
   return Promise.resolve(this);
@@ -403,7 +419,7 @@ userSchema.methods.addToWishlist = function(this: IUser, productId: string): Pro
 userSchema.methods.removeFromWishlist = function(this: IUser, productId: string): Promise<IUser> {
   this.wishlist = this.wishlist.filter(item => 
     item.product.toString() !== productId.toString()
-  );
+  ) as any;
   return this.save();
 };
 

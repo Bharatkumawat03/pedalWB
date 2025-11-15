@@ -1,17 +1,39 @@
+import mongoose from 'mongoose';
 import Category, { ICategory } from '../models/Category';
 import Product from '../models/Product';
 
-export interface CategoryWithCount extends ICategory {
-  productCount?: number;
+export interface CategoryWithCount {
+  _id: any;
+  name: string;
+  slug: string;
+  description?: string;
+  icon: string;
+  image?: {
+    url?: string;
+    publicId?: string;
+    altText?: string;
+  };
+  status: 'active' | 'inactive';
+  sortOrder: number;
+  seo?: {
+    metaTitle?: string;
+    metaDescription?: string;
+    keywords?: string[];
+  };
+  parent?: mongoose.Types.ObjectId;
+  productCount: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+  __v: number;
 }
 
 class CategoryService {
   async getCategories(): Promise<ICategory[]> {
-    return await Category.find({ isActive: true }).sort({ name: 1 });
+    return await Category.find({ status: 'active' }).sort({ name: 1 });
   }
 
   async getCategoriesWithCount(): Promise<CategoryWithCount[]> {
-    const categories = await Category.find({ isActive: true }).sort({ name: 1 });
+    const categories = await Category.find({ status: 'active' }).sort({ name: 1 });
     
     const categoriesWithCount = await Promise.all(
       categories.map(async (category) => {
@@ -35,12 +57,12 @@ class CategoryService {
   }
 
   async getCategoryBySlug(slug: string): Promise<ICategory | null> {
-    return await Category.findOne({ slug, isActive: true });
+    return await Category.findOne({ slug, status: 'active' });
   }
 
   async getCategoryTree(): Promise<ICategory[]> {
     // Get all categories and organize into hierarchical structure
-    const categories = await Category.find({ isActive: true }).sort({ name: 1 });
+    const categories = await Category.find({ status: 'active' }).sort({ name: 1 });
     
     // For now, return flat structure
     // In the future, this could build a proper tree with parent-child relationships
@@ -72,16 +94,15 @@ class CategoryService {
   async deactivateCategory(id: string): Promise<ICategory | null> {
     return await Category.findByIdAndUpdate(
       id,
-      { isActive: false },
+      { status: 'inactive' },
       { new: true }
     );
   }
 
   async getFeaturedCategories(limit: number = 6): Promise<CategoryWithCount[]> {
     const categories = await Category.find({ 
-      isActive: true, 
-      featured: true 
-    }).limit(limit).sort({ name: 1 });
+      status: 'active'
+    }).limit(limit).sort({ sortOrder: 1, name: 1 });
 
     const categoriesWithCount = await Promise.all(
       categories.map(async (category) => {

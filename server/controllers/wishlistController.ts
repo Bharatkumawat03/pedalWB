@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Request, Response, NextFunction } from 'express';
 import User from '../models/User';
 import Product from '../models/Product';
@@ -74,9 +75,9 @@ export const addToWishlist = async (req: AuthenticatedRequest, res: Response, ne
 
     // Add new item to wishlist
     user.wishlist.push({
-      product: productId,
+      product: new mongoose.Types.ObjectId(productId),
       addedAt: new Date()
-    });
+    } as any);
 
     await user.save();
 
@@ -172,7 +173,7 @@ export const removeFromWishlistByProduct = async (req: AuthenticatedRequest, res
 
     user.wishlist = user.wishlist.filter(
       item => item.product.toString() !== req.params.productId
-    );
+    ) as any;
     
     await user.save();
 
@@ -209,7 +210,7 @@ export const clearWishlist = async (req: AuthenticatedRequest, res: Response, ne
       return;
     }
 
-    user.wishlist = [];
+    user.wishlist = [] as any;
     await user.save();
 
     res.status(200).json({

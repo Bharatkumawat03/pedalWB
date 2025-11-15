@@ -120,7 +120,7 @@ class UserService {
       user.addresses.forEach(addr => addr.isDefault = false);
     }
 
-    user.addresses.push(addressData);
+    user.addresses.push(addressData as any);
     await user.save();
 
     return user.addresses;

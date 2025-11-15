@@ -79,10 +79,7 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms', 
 app.use(cors({
   origin: [
     process.env.FRONTEND_URL || 'http://localhost:5000',
-    'http://localhost:8080',
-    'http://127.0.0.1:5000',
-    'http://127.0.0.1:3002',
-    /.*\.replit\.dev$/
+    process.env.ADMIN_URL || 'http://localhost:8080',
   ],
   credentials: true
 }));

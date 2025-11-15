@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import User, { IUser, IWishlistItem } from '../models/User';
 import Product from '../models/Product';
 
@@ -38,9 +39,9 @@ class WishlistService {
 
     // Add new item to wishlist
     user.wishlist.push({
-      product: productId,
+      product: new mongoose.Types.ObjectId(productId),
       addedAt: new Date()
-    });
+    } as any);
 
     await user.save();
 
@@ -106,9 +107,9 @@ class WishlistService {
     } else {
       // Add to wishlist
       user.wishlist.push({
-        product: productId,
+        product: new mongoose.Types.ObjectId(productId),
         addedAt: new Date()
-      });
+      } as any);
       action = 'added';
     }
 
@@ -132,7 +133,7 @@ class WishlistService {
       throw new Error('User not found');
     }
 
-    user.wishlist = [];
+    user.wishlist = [] as any;
     await user.save();
   }
 
@@ -179,10 +180,10 @@ class WishlistService {
     } else {
       // Add new item to cart
       user.cart.push({
-        product: productId,
+        product: new mongoose.Types.ObjectId(productId),
         quantity,
         addedAt: new Date()
-      });
+      } as any);
     }
 
     // Remove from wishlist

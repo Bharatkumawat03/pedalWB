@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import Order, { IOrder } from '../models/Order';
+import Order, { IOrder, OrderStatus } from '../models/Order';
 import User from '../models/User';
 import Product from '../models/Product';
 import { AuthenticatedRequest } from '../types';
@@ -366,7 +366,7 @@ export const cancelOrder = async (req: AuthenticatedRequest, res: Response, next
       return;
     }
 
-    order.orderStatus = 'cancelled';
+    order.orderStatus = OrderStatus.CANCELLED;
     order.cancelledAt = new Date();
 
     // Restore inventory

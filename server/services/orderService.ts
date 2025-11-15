@@ -114,7 +114,7 @@ class OrderService {
     const mongoQuery: any = {};
 
     if (query.status) {
-      mongoQuery.status = query.status;
+      mongoQuery.orderStatus = query.status;
     }
 
     if (query.paymentStatus) {
@@ -219,7 +219,7 @@ class OrderService {
     }
 
     // Check if order can be cancelled
-    if (['shipped', 'delivered', 'cancelled'].includes(order.status)) {
+    if (['shipped', 'delivered', 'cancelled'].includes(order.orderStatus)) {
       throw new Error('Order cannot be cancelled at this stage');
     }
 

@@ -25,6 +25,7 @@ import {
   Bike,
   BarChart3,
   Bell,
+  Badge,
 } from "lucide-react";
 
 const menuItems = [
@@ -42,6 +43,11 @@ const menuItems = [
     title: "Categories",
     url: "/admin/categories",
     icon: FolderOpen,
+  },
+  {
+    title: "Brands",
+    url: "/admin/brands",
+    icon: Badge,
   },
   {
     title: "Users",

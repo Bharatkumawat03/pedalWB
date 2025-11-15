@@ -603,6 +603,7 @@ export function useAdminData() {
     // Data
     products,
     categories,
+    brands,
     users,
     orders,
     loading,

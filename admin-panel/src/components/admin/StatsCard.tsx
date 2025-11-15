@@ -13,7 +13,7 @@ interface StatsCardProps {
     value: number;
     label: string;
   };
-  variant?: "default" | "warning" | "success";
+  variant?: "default" | "warning" | "success" | "premium";
 }
 
 export function StatsCard({
@@ -35,7 +35,8 @@ export function StatsCard({
   const variantStyles = {
     default: "border-0",
     warning: "border-l-4 border-l-yellow-500",
-    success: "border-l-4 border-l-green-500"
+    success: "border-l-4 border-l-green-500",
+    premium: "border-l-4 border-l-amber-500 bg-gradient-to-r from-amber-50/50 to-transparent dark:from-amber-950/20"
   }[variant];
 
   return (

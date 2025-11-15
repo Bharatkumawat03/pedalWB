@@ -54,7 +54,7 @@ export default function AdminBrands() {
 
   // Calculate advanced stats
   const stats = useMemo(() => {
-    const totalBrands = brands.length;
+    const totalBrands = brands?.length;
     const activeBrands = brands.filter(b => b.status === 'Active').length;
     const premiumBrands = brands.filter(b => b.tier === 'Premium').length;
     const totalProducts = brands.reduce((sum, b) => sum + b.productCount, 0);

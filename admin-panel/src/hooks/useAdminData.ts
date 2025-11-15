@@ -213,10 +213,27 @@ const initialOrders = [
   }
 ];
 
+// Mock Brands Data
+const initialBrands = [
+  { id: "brand-1", name: "Nike", description: "Athletic footwear and apparel", country: "USA", logo: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100&h=100&fit=crop", website: "https://nike.com", tier: "Premium", status: "Active", productCount: 145, revenue: 2500000, createdAt: "2020-01-15" },
+  { id: "brand-2", name: "Adidas", description: "Sports equipment and clothing", country: "Germany", logo: "https://images.unsplash.com/photo-1556906781-9a412961c28c?w=100&h=100&fit=crop", website: "https://adidas.com", tier: "Premium", status: "Active", productCount: 132, revenue: 2200000, createdAt: "2020-02-20" },
+  { id: "brand-3", name: "Apple", description: "Consumer electronics and software", country: "USA", logo: "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=100&h=100&fit=crop", website: "https://apple.com", tier: "Premium", status: "Active", productCount: 89, revenue: 5500000, createdAt: "2019-11-10" },
+  { id: "brand-4", name: "Samsung", description: "Electronics and technology", country: "South Korea", logo: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100&h=100&fit=crop", website: "https://samsung.com", tier: "Premium", status: "Active", productCount: 201, revenue: 4800000, createdAt: "2020-03-05" },
+  { id: "brand-5", name: "Sony", description: "Electronics and entertainment", country: "Japan", logo: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=100&h=100&fit=crop", website: "https://sony.com", tier: "Premium", status: "Active", productCount: 167, revenue: 3900000, createdAt: "2019-12-15" },
+  { id: "brand-6", name: "Zara", description: "Fashion and apparel", country: "Spain", logo: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=100&h=100&fit=crop", website: "https://zara.com", tier: "Standard", status: "Active", productCount: 423, revenue: 1800000, createdAt: "2020-04-12" },
+  { id: "brand-7", name: "H&M", description: "Fashion retailer", country: "Sweden", logo: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=100&h=100&fit=crop", website: "https://hm.com", tier: "Standard", status: "Active", productCount: 512, revenue: 1500000, createdAt: "2020-01-28" },
+  { id: "brand-8", name: "IKEA", description: "Furniture and home accessories", country: "Sweden", logo: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&h=100&fit=crop", website: "https://ikea.com", tier: "Standard", status: "Active", productCount: 789, revenue: 3200000, createdAt: "2019-10-20" },
+  { id: "brand-9", name: "Rolex", description: "Luxury watches", country: "Switzerland", logo: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=100&h=100&fit=crop", website: "https://rolex.com", tier: "Premium", status: "Active", productCount: 45, revenue: 8900000, createdAt: "2019-09-15" },
+  { id: "brand-10", name: "Toyota", description: "Automotive manufacturer", country: "Japan", logo: "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=100&h=100&fit=crop", website: "https://toyota.com", tier: "Premium", status: "Active", productCount: 234, revenue: 6700000, createdAt: "2020-02-10" },
+  { id: "brand-11", name: "Levi's", description: "Denim and casual wear", country: "USA", logo: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=100&h=100&fit=crop", website: "https://levis.com", tier: "Standard", status: "Inactive", productCount: 0, revenue: 0, createdAt: "2020-05-18" },
+  { id: "brand-12", name: "Puma", description: "Athletic and casual footwear", country: "Germany", logo: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=100&h=100&fit=crop", website: "https://puma.com", tier: "Standard", status: "Active", productCount: 98, revenue: 980000, createdAt: "2020-03-22" },
+];
+
 export function useAdminData() {
   const { toast } = useToast();
   const [products, setProducts] = useState(initialProducts);
   const [categories, setCategories] = useState(initialCategories);
+  const [brands, setBrands] = useState(initialBrands);
   const [users, setUsers] = useState(initialUsers);
   const [orders, setOrders] = useState(initialOrders);
   const [loading, setLoading] = useState(false);
@@ -451,6 +468,65 @@ export function useAdminData() {
     });
   };
 
+
+   // Brand operations
+   const createBrand = async (brandData: any) => {
+    setLoading(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const newBrand = {
+        id: `brand-${Date.now()}`,
+        ...brandData,
+        productCount: 0,
+        revenue: 0,
+        createdAt: new Date().toISOString().split('T')[0],
+      };
+      setBrands([...brands, newBrand]);
+      toast({ title: "Success", description: "Brand created successfully" });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to create brand", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateBrand = async (id: string, brandData: any) => {
+    setLoading(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setBrands(brands.map(brand => brand.id === id ? { ...brand, ...brandData } : brand));
+      toast({ title: "Success", description: "Brand updated successfully" });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update brand", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteBrand = async (id: string) => {
+    setLoading(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setBrands(brands.filter(brand => brand.id !== id));
+      toast({ title: "Success", description: "Brand deleted successfully" });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to delete brand", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const searchBrands = (searchTerm: string) => {
+    if (!searchTerm) return brands;
+    const term = searchTerm.toLowerCase();
+    return brands.filter(brand =>
+      brand.name.toLowerCase().includes(term) ||
+      brand.description.toLowerCase().includes(term) ||
+      brand.country.toLowerCase().includes(term) ||
+      brand.id.toLowerCase().includes(term)
+    );
+  };
+
   // Order operations
   const updateOrderStatus = async (id: string, status: string) => {
     setLoading(true);
@@ -542,6 +618,12 @@ export function useAdminData() {
     updateCategory,
     deleteCategory,
     searchCategories,
+
+     // Brand operations
+     createBrand,
+     updateBrand,
+     deleteBrand,
+     searchBrands,
     
     // User operations
     createUser,

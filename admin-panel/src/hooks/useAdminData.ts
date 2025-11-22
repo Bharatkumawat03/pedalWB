@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { brandService } from "@/services/brandService";
 
 // Mock data - in real app, this would come from API
 const initialProducts = [
@@ -233,10 +234,32 @@ export function useAdminData() {
   const { toast } = useToast();
   const [products, setProducts] = useState(initialProducts);
   const [categories, setCategories] = useState(initialCategories);
-  const [brands, setBrands] = useState(initialBrands);
+  const [brands, setBrands] = useState([]);
   const [users, setUsers] = useState(initialUsers);
   const [orders, setOrders] = useState(initialOrders);
   const [loading, setLoading] = useState(false);
+
+  // Fetch brands from API
+  const fetchBrands = async (filters = {}) => {
+    try {
+      setLoading(true);
+      const response = await brandService.getBrands(filters);
+      setBrands(response.brands);
+    } catch (error) {
+      toast({ 
+        title: "Error", 
+        description: "Failed to fetch brands", 
+        variant: "destructive" 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initialize brands on mount
+  useEffect(() => {
+    fetchBrands();
+  }, []);
 
   // Product operations
   const createProduct = async (productData: any) => {
@@ -473,14 +496,7 @@ export function useAdminData() {
    const createBrand = async (brandData: any) => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const newBrand = {
-        id: `brand-${Date.now()}`,
-        ...brandData,
-        productCount: 0,
-        revenue: 0,
-        createdAt: new Date().toISOString().split('T')[0],
-      };
+      const newBrand = await brandService.createBrand(brandData);
       setBrands([...brands, newBrand]);
       toast({ title: "Success", description: "Brand created successfully" });
     } catch (error) {
@@ -493,8 +509,8 @@ export function useAdminData() {
   const updateBrand = async (id: string, brandData: any) => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setBrands(brands.map(brand => brand.id === id ? { ...brand, ...brandData } : brand));
+      const updatedBrand = await brandService.updateBrand(id, brandData);
+      setBrands(brands.map(brand => brand._id === id ? updatedBrand : brand));
       toast({ title: "Success", description: "Brand updated successfully" });
     } catch (error) {
       toast({ title: "Error", description: "Failed to update brand", variant: "destructive" });
@@ -506,8 +522,8 @@ export function useAdminData() {
   const deleteBrand = async (id: string) => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setBrands(brands.filter(brand => brand.id !== id));
+      await brandService.deleteBrand(id);
+      setBrands(brands.filter(brand => brand._id !== id));
       toast({ title: "Success", description: "Brand deleted successfully" });
     } catch (error) {
       toast({ title: "Error", description: "Failed to delete brand", variant: "destructive" });
@@ -516,15 +532,8 @@ export function useAdminData() {
     }
   };
 
-  const searchBrands = (searchTerm: string) => {
-    if (!searchTerm) return brands;
-    const term = searchTerm.toLowerCase();
-    return brands.filter(brand =>
-      brand.name.toLowerCase().includes(term) ||
-      brand.description.toLowerCase().includes(term) ||
-      brand.country.toLowerCase().includes(term) ||
-      brand.id.toLowerCase().includes(term)
-    );
+  const searchBrands = async (filters = {}) => {
+    await fetchBrands(filters);
   };
 
   // Order operations
@@ -625,6 +634,7 @@ export function useAdminData() {
      updateBrand,
      deleteBrand,
      searchBrands,
+     fetchBrands,
     
     // User operations
     createUser,

@@ -39,18 +39,35 @@ export default function AdminBrands() {
 
   const {
     brands,
-    products,
     loading,
     createBrand,
     updateBrand,
     deleteBrand,
-    searchBrands
+    searchBrands,
+    fetchBrands
   } = useAdminData();
   
   const { toast } = useToast();
 
   // Debounced search
   const debouncedSearch = useDebounce(searchTerm, 300);
+
+  // Fetch brands with filters
+  useEffect(() => {
+    const filters: any = {};
+    
+    if (debouncedSearch) filters.search = debouncedSearch;
+    if (selectedStatus !== 'all') filters.status = selectedStatus;
+    if (selectedCountry !== 'all') filters.country = selectedCountry;
+    if (minProducts) filters.minProducts = parseInt(minProducts);
+    if (maxProducts) filters.maxProducts = parseInt(maxProducts);
+    if (dateFrom) filters.dateFrom = dateFrom;
+    if (dateTo) filters.dateTo = dateTo;
+    if (sortField) filters.sort = sortField;
+    if (sortDirection) filters.order = sortDirection;
+    
+    fetchBrands(filters);
+  }, [debouncedSearch, selectedStatus, selectedCountry, minProducts, maxProducts, dateFrom, dateTo, sortField, sortDirection]);
 
   // Calculate advanced stats
   const stats = useMemo(() => {
@@ -97,60 +114,8 @@ export default function AdminBrands() {
     };
   }, [brands]);
 
-  // Filtered and sorted brands
-  const filteredBrands = useMemo(() => {
-    let result = searchBrands(debouncedSearch);
-
-    // Status filter
-    if (selectedStatus !== 'all') {
-      result = result.filter(brand => brand.status === selectedStatus);
-    }
-
-    // Country filter
-    if (selectedCountry !== 'all') {
-      result = result.filter(brand => brand.country === selectedCountry);
-    }
-
-    // Products range filter
-    if (minProducts || maxProducts) {
-      result = result.filter(brand => {
-        const count = brand.productCount;
-        if (minProducts && count < parseInt(minProducts)) return false;
-        if (maxProducts && count > parseInt(maxProducts)) return false;
-        return true;
-      });
-    }
-
-    // Date range filter
-    if (dateFrom || dateTo) {
-      result = result.filter(brand => {
-        const brandDate = new Date(brand.createdAt);
-        if (dateFrom && brandDate < new Date(dateFrom)) return false;
-        if (dateTo && brandDate > new Date(dateTo)) return false;
-        return true;
-      });
-    }
-
-    // Sorting
-    result.sort((a, b) => {
-      let aValue = a[sortField];
-      let bValue = b[sortField];
-
-      if (sortField === 'productCount' || sortField === 'revenue') {
-        aValue = parseFloat(aValue) || 0;
-        bValue = parseFloat(bValue) || 0;
-      } else if (typeof aValue === 'string') {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-
-    return result;
-  }, [debouncedSearch, selectedStatus, selectedCountry, minProducts, maxProducts, dateFrom, dateTo, sortField, sortDirection, searchBrands]);
+  // Use brands directly from API (already filtered and sorted)
+  const filteredBrands = brands || [];
 
   // Pagination
   const {
@@ -176,7 +141,7 @@ export default function AdminBrands() {
 
   const handleUpdateBrand = async (data: any) => {
     if (editingBrand) {
-      await updateBrand(editingBrand.id, data);
+      await updateBrand(editingBrand._id, data);
       setEditingBrand(null);
       setBrandFormOpen(false);
     }
@@ -273,7 +238,7 @@ export default function AdminBrands() {
       const csvContent = [
         headers.join(','),
         ...filteredBrands.map(brand => [
-          brand.id,
+          brand._id,
           `"${brand.name}"`,
           brand.country,
           brand.status,
@@ -301,7 +266,7 @@ export default function AdminBrands() {
     if (selectedBrands.length === paginatedBrands.length) {
       setSelectedBrands([]);
     } else {
-      setSelectedBrands(paginatedBrands.map(b => b.id));
+      setSelectedBrands(paginatedBrands.map(b => b._id));
     }
   };
 
@@ -429,7 +394,7 @@ export default function AdminBrands() {
               <CardContent>
                 <div className="space-y-4">
                   {stats.topPerformingBrands.map((brand: any, index) => (
-                    <div key={brand.id} className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+                    <div key={brand._id} className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-4">
                         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 text-white font-bold">
                           {index + 1}

@@ -148,13 +148,13 @@ export const BrandsTable = React.memo(function BrandsTable({
         <TableBody>
           {brands.map((brand) => (
             <TableRow 
-              key={brand.id} 
+              key={brand._id} 
               className="hover:bg-muted/20 transition-colors"
             >
               <TableCell>
                 <Checkbox
-                  checked={selectedBrands.includes(brand.id)}
-                  onCheckedChange={() => onSelectBrand(brand.id)}
+                  checked={selectedBrands.includes(brand._id)}
+                  onCheckedChange={() => onSelectBrand(brand._id)}
                 />
               </TableCell>
               <TableCell>
@@ -166,7 +166,7 @@ export const BrandsTable = React.memo(function BrandsTable({
                   />
                   <div>
                     <p className="font-medium">{brand.name}</p>
-                    <p className="text-sm text-muted-foreground">ID: {brand.id}</p>
+                    <p className="text-sm text-muted-foreground">ID: {brand._id}</p>
                   </div>
                 </div>
               </TableCell>
@@ -211,7 +211,7 @@ export const BrandsTable = React.memo(function BrandsTable({
                       Edit Brand
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => onToggleStatus(brand.id, brand.status)}>
+                    <DropdownMenuItem onClick={() => onToggleStatus(brand._id, brand.status)}>
                       {brand.status === 'Active' ? (
                         <>
                           <ToggleLeft className="h-4 w-4 mr-2" />
@@ -227,7 +227,7 @@ export const BrandsTable = React.memo(function BrandsTable({
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 
                       className="text-destructive"
-                      onClick={() => onDeleteBrand(brand.id)}
+                      onClick={() => onDeleteBrand(brand._id)}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete Brand

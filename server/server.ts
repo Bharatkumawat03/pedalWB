@@ -22,6 +22,7 @@ import categoryRoutes from './routes/categories';
 import careersRoutes from './routes/careers';
 import contactRoutes from './routes/contact';
 import newsletterRoutes from './routes/newsletter';
+import brandRoutes from './routes/brands';
 
 // Import admin routes
 import adminAuthRoutes from './routes/admin/auth';
@@ -100,23 +101,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/careers', careersRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/newsletter', newsletterRoutes);
-
-// Brands endpoint
-app.get('/api/brands', async (req: Request, res: Response) => {
-  try {
-    const Product = require('./models/Product').default;
-    const brands = await Product.distinct('brand');
-    const brandsWithCount = await Promise.all(
-      brands.map(async (brand: string) => {
-        const count = await Product.countDocuments({ brand });
-        return { name: brand, productCount: count };
-      })
-    );
-    res.json({ success: true, data: brandsWithCount });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
+app.use('/api/brands', brandRoutes);
 
 // Admin API Routes
 app.use('/api/admin/auth', adminAuthRoutes);
